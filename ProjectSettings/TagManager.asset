@@ -41,11 +41,8 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
-  - name: BG1
+  - name: BG
     uniqueID: 3556400581
-    locked: 0
-  - name: BG2
-    uniqueID: 2540446255
     locked: 0
   - name: Player
     uniqueID: 3548183421
