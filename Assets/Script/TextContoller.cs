@@ -17,7 +17,7 @@ public class TextContoller : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        StartCoroutine (TypeText (text, "这是一段用于珠子打印的代码，可以做用于对话框文字显示", 0.15f));
+        StartCoroutine (TypeText (text, "这是一段用于珠子打印的代码，可以做用于对话框文字显示", 0.1f));
     }
 
     // Update is called once per frame
