@@ -4,46 +4,117 @@ using UnityEngine;
 
 using System;
 using TMPro;
-using UnityEngine.UI;
-using Unity.VisualScripting;
-using static System.Net.Mime.MediaTypeNames;
 using UnityEngine.Playables;
-//using UnityEngine.Networking;
-//using Unity.Plastic.Newtonsoft.Json;
+using UnityEngine.Networking;
+using Newtonsoft.Json;
 
 public class GameApp : UnitySingleton<GameApp> {
-	Queue<PlayerMessage> gameMessages= new Queue<PlayerMessage>();
+	Queue<PlayerMessage> gameMessages = new Queue<PlayerMessage> ();
 	bool isRunning = false;
 
 	public TMP_Text roundText;
-    public TMP_Text playerName;
+	public TMP_Text playerName;
 	public TMP_Text playerMessage;
-    public UnityEngine.UI.Image playerImg;
+	public UnityEngine.UI.Image playerImg;
 	public List<Sprite> PlayerImageList;
-    private bool isMsgHandling = false;
+	private bool isMsgHandling = false;
 	public TMP_Text mainRound;
 	public GameObject Roundboard;
 	private int currentRound = 0;
 
 	public bool IsRunning { get => isRunning; set => isRunning = value; }
 	public Queue<PlayerMessage> GameMessages { get => gameMessages; set => gameMessages = value; }
-	public Dictionary<int, GameObject> dictPlayerObjects= new Dictionary<int, GameObject>();
+	public Dictionary<int, GameObject> dictPlayerObjects = new Dictionary<int, GameObject> ();
 
+	private List<string> clipList = new List<string> ();
+	private int currentPlayerNum = 0;
+	private int femaleCount = 0;
+	private readonly int femaleCountMax = 6;
+	private int maleCount = 0;
+	private readonly int maleCountMax = 6;
+	static readonly string [] MaleNames = { "John", "David", "Michael", "Robert", "William", "James", "Richard", "Joseph", "Thomas", "Charles" };
+	static readonly string [] FemaleNames = { "Emily", "Emma", "Olivia", "Sophia", "Ava", "Isabella", "Mia", "Abigail", "Avery", "Lily" };
+	public GameObject playerTemplate;
 	/// <summary>
 	/// 初始化
 	/// </summary>
-	public void InitGame()
-	{
+	public void InitGame () {
+		clipList.Add ("Busy");
+		clipList.Add ("Death");
+		clipList.Add ("Dying");
+		clipList.Add ("Idle_Down");
+		clipList.Add ("Idle_Left");
+		clipList.Add ("Idle_Right");
+		clipList.Add ("Idle_Up");
+
+		//GetOnlinePlayers ();
+
 		var players = GameObject.FindGameObjectsWithTag ("Player");
 		foreach (var obj in players) {
-			Player player = obj.GetComponent<Player>();
-			dictPlayerObjects.Add(player.Id, obj);
-			// todo 动态生成Clip？
-			//player.GetComponent<Animation>().GetClip("Player_Idel_Left")
+
+			Player player = obj.GetComponent<Player> ();
+			dictPlayerObjects.Add (player.Id, obj);
 		}
 
 		// get start
 		StartCoroutine (run ());
+	}
+
+	async void GetOnlinePlayers()
+	{
+		using UnityWebRequest request = UnityWebRequest.Get (APIUrl.getPlayer);
+		request.timeout = GameSetting.RequestTimeout;
+		await request.SendWebRequest ();
+
+		if (request.result == UnityWebRequest.Result.Success) {
+			// 请求成功,处理响应数据
+			Debug.Log ("Response: " + request.downloadHandler.text);
+			// parse response message
+			var respawn = GameObject.FindGameObjectWithTag ("Respawn");
+			dynamic players = JsonConvert.DeserializeObject(request.downloadHandler.text);
+			foreach (dynamic player in players) {
+				string name = player.name;
+				Debug.Log (name);
+				//SpawnPlayer (playerTemplate, player, respawn.transform.GetChild (currentPlayerNum));
+			}
+		} else {
+			// 请求失败,输出错误信息
+			Debug.LogError ("Error: " + request.error);
+		}
+	}
+
+	public GameObject SpawnPlayer (GameObject instance, Player newPlayer, Transform parent) {
+		currentPlayerNum++;
+		GameObject _playerObject = GameObject.Instantiate (instance, parent.transform.position, Quaternion.identity, parent);
+		// enable player avatar sync avatar data
+		var player = _playerObject.GetComponent<Player> ();
+		player.PlayerName = newPlayer.PlayerName;
+		player.Id = newPlayer.Id;
+		player.Gender = UnityEngine.Random.Range (1, 2) == 1 ? PlayerGender.Female : PlayerGender.Male; // 随机性别
+		var overrideController = new AnimatorOverrideController (
+			player.GetComponent<Animator> ().runtimeAnimatorController
+			);
+
+		// 生成前缀
+		string newClipPrefix = "";
+		if (player.Gender == PlayerGender.Male) {
+			//player.PlayerName = MaleNames [maleCount];
+			maleCount++;
+			newClipPrefix = $"male_{maleCount % maleCountMax + 1:D2}_";
+		} else if (player.Gender == PlayerGender.Female) {
+			//player.PlayerName = FemaleNames [femaleCount];
+			femaleCount++;
+			newClipPrefix = $"female_{femaleCount % femaleCountMax + 1:D2}_";
+		}
+		foreach (var clipPrefix in clipList) {
+			overrideController [clipPrefix] = Resources.Load<AnimationClip> ($"/Animations/{newClipPrefix}{clipPrefix}.anim");
+		}
+
+		Animator animator = _playerObject.GetComponent<Animator> ();
+		animator.runtimeAnimatorController = overrideController;
+
+		dictPlayerObjects.Add (player.Id, _playerObject);
+		return _playerObject;
 	}
 
 	void Start () {
@@ -67,8 +138,8 @@ public class GameApp : UnitySingleton<GameApp> {
 		DateTime startTime = DateTime.Now;
 		while (IsRunning) {
 			getMsg ();
-            HandleMsg();
-            TimeSpan timeDifference = DateTime.Now - startTime;
+			HandleMsg ();
+			TimeSpan timeDifference = DateTime.Now - startTime;
 			if (timeDifference.TotalMilliseconds < GameSetting.GameLoopInterval) {
 				float waitMilliseconds = GameSetting.GameLoopInterval - (float)timeDifference.TotalMilliseconds;
 				yield return new WaitForSeconds (waitMilliseconds / 1000.0f);
@@ -82,8 +153,7 @@ public class GameApp : UnitySingleton<GameApp> {
 	/// </summary>
 	/// <returns></returns>
 	void getMsg () {
-		if (isMsgHandling)
-		{
+		if (isMsgHandling) {
 			return;
 		}
 		Debug.Log ("Request a message");
@@ -91,10 +161,10 @@ public class GameApp : UnitySingleton<GameApp> {
 		// mock up 等待1秒
 		int id = UnityEngine.Random.Range (1, GameSetting.PlayerNum);
 		PlayerMessage msg = new PlayerMessage ();
-        msg.Round = id;
-        msg.PlayerName = $"Player{id}";
+		msg.Round = id;
+		msg.PlayerName = $"Player{id}";
 		msg.PlayerId = id;
-		msg.TargetId = id - 1 > 0 ? id - 1 : id+1;
+		msg.TargetId = id - 1 > 0 ? id - 1 : id + 1;
 		msg.Type = PlayerMessageType.WolfMessage;
 		msg.Message = $"This is {msg.PlayerName} speaking, test test test 中文测试 test test test test test test test中文测试。This is {msg.PlayerName} speaking 中文测试,This is {msg.PlayerName} speaking,This is {msg.PlayerName} speaking,This is {msg.PlayerName} speaking,This is {msg.PlayerName} speaking,This is {msg.PlayerName} speaking,This is {msg.PlayerName} speaking,This is {msg.PlayerName} speaking,This is {msg.PlayerName} speaking,This is {msg.PlayerName} speaking,This is {msg.PlayerName} speaking,This is {msg.PlayerName} speaking,This is {msg.PlayerName} speaking,This is {msg.PlayerName} speaking, ";
 		gameMessages.Enqueue (msg);
@@ -117,22 +187,21 @@ public class GameApp : UnitySingleton<GameApp> {
 		*/
 	}
 
-    void HandleMsg () {
+	void HandleMsg () {
 		while (GameMessages.Count != 0) {
-			if (isMsgHandling)
-			{
-				Debug.Log("处理消息中");
+			if (isMsgHandling) {
+				Debug.Log ("处理消息中");
 				continue;
 			}
 			isMsgHandling = true;
-			PlayerMessage msg = GameMessages.Dequeue();
-			
+			PlayerMessage msg = GameMessages.Dequeue ();
+
 			if (IsRoundChanged (msg.Round)) {
 				mainRound.text = $"Round {msg.Round}";
 				StartCoroutine (ShowRoundBoard (msg.Round));
 				this.currentRound = msg.Round;
 			}
-			
+
 			switch (msg.Type) {
 			case PlayerMessageType.PlayerMessage:
 				onPlayerMessage (msg);
@@ -150,21 +219,18 @@ public class GameApp : UnitySingleton<GameApp> {
 				onGameConclusion (msg);
 				break;
 			}
-        }
-    }
-
-	private void onGameConclusion(PlayerMessage msg)
-	{
-		throw new NotImplementedException();
+		}
 	}
 
-	private void onJustice(PlayerMessage msg)
-	{
-		throw new NotImplementedException();
+	private void onGameConclusion (PlayerMessage msg) {
+		throw new NotImplementedException ();
 	}
 
-	private void onProphetMessage(PlayerMessage msg)
-	{
+	private void onJustice (PlayerMessage msg) {
+		throw new NotImplementedException ();
+	}
+
+	private void onProphetMessage (PlayerMessage msg) {
 		Debug.Log ($"{msg.PlayerName} 预言家发言");
 		var player = dictPlayerObjects [msg.PlayerId].GetComponent<Player> ();
 		roundText.text = $"Round {msg.Round} - Wolf";
@@ -179,8 +245,7 @@ public class GameApp : UnitySingleton<GameApp> {
 		Debug.Log ($"Player {targetPlayer.Id} was killed");
 	}
 
-    void onWolfMessage(PlayerMessage msg)
-	{
+	void onWolfMessage (PlayerMessage msg) {
 		Debug.Log ($"{msg.PlayerName} 狼人发言");
 		var player = dictPlayerObjects [msg.PlayerId].GetComponent<Player> ();
 		roundText.text = $"Round {msg.Round} - Wolf";
@@ -203,29 +268,27 @@ public class GameApp : UnitySingleton<GameApp> {
 		// wait for the animation
 
 		var player = dictPlayerObjects [msg.PlayerId].GetComponent<Player> ();
-		roundText.text = $"Round { msg.Round}";
-        playerName.text =  msg.PlayerName;
-        playerImg.sprite = PlayerImageList[msg.PlayerId % GameSetting.PlayerNum];
-        StartCoroutine(TypeText(player, playerMessage, msg.Message, 0.01f));
-    }
+		roundText.text = $"Round {msg.Round}";
+		playerName.text = msg.PlayerName;
+		playerImg.sprite = PlayerImageList [msg.PlayerId % GameSetting.PlayerNum];
+		StartCoroutine (TypeText (player, playerMessage, msg.Message, 0.01f));
+	}
 
-    IEnumerator TypeText(Player player, TMP_Text tMP_text, string str, float interval)
-    {
+	IEnumerator TypeText (Player player, TMP_Text tMP_text, string str, float interval) {
 		player.State = PlayerState.Busy;
 		int i = 0;
-        while (i <= str.Length)
-        {
-            tMP_text.text = str.Substring(0, i++);
-            yield return new WaitForSeconds(interval);
-        }
+		while (i <= str.Length) {
+			tMP_text.text = str.Substring (0, i++);
+			yield return new WaitForSeconds (interval);
+		}
 
 		// 消息结束的等待
-        yield return new WaitForSeconds(GameSetting.MessageEndWaitforSeconds);
+		yield return new WaitForSeconds (GameSetting.MessageEndWaitforSeconds);
 		yield return isMsgHandling = false;
 		yield return player.State = PlayerState.Idle;
 	}
 
-	bool IsRoundChanged(int round) {
+	bool IsRoundChanged (int round) {
 		return currentRound != round;
 	}
 

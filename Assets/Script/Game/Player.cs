@@ -11,7 +11,8 @@ public enum PlayerRole {
 public enum PlayerState {
 	Idle = 1,
 	Dead = 2,
-	Busy = 3
+	Busy = 3,
+	Dying = 4
 }
 
 public enum PlayerGender {
@@ -44,6 +45,7 @@ public class Player : MonoBehaviour
 			animator.SetBool ("Busy", value == PlayerState.Busy);
 			animator.SetBool ("Death", value == PlayerState.Dead);
 			animator.SetBool ("Idle", value == PlayerState.Idle);
+			animator.SetBool ("Dying", value == PlayerState.Dying);
 		}
 	}
 

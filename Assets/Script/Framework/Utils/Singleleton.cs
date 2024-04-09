@@ -1,11 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-/// <summary>
-/// 实现普通的单例模式
-/// where 限制模板的类型，new()指的是这个类型必须要能被实例化
-/// </summary>
-/// <typeparam name="T"></typeparam>
+
 public abstract class Singleleton<T> where T : new()
 {
     private static T _instance;
@@ -16,7 +12,7 @@ public abstract class Singleleton<T> where T : new()
         {
             if (_instance == null)
             {
-                lock (mutex) // 保证线程安全
+                lock (mutex) // 锟斤拷证锟竭程帮拷全
                 {
                     if (_instance == null)
                     {

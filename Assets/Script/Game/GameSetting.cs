@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class GameSetting : MonoBehaviour
 {
-    static int playerNum = 6;
+    static int playerNum = 10;
 	static int playSpeed = 1;
 	static float gameLoopInterval = 1000f;
     static int requestTimeout = 1;
@@ -22,11 +22,11 @@ public class GameSetting : MonoBehaviour
     {
         Debug.Log ("Init");
         //GameObject prefab = Resources.Load<GameObject>("Assets/Charactors/Player/Player.prefab");
-        var players = GameObject.FindGameObjectsWithTag ("Player");
+  //      var players = GameObject.FindGameObjectsWithTag ("Player");
 
-		for (int i=0; i<players.Length; i++) {
-			players [i].SetActive (i < playerNum);
-		}
+		//for (int i=0; i<players.Length; i++) {
+		//	players [i].SetActive (i < playerNum);
+		//}
     }
 
     // Update is called once per frame
