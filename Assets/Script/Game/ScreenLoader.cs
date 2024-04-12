@@ -12,7 +12,6 @@ public class ScreenLoader : MonoBehaviour
     {
     }
 
-
     public IEnumerator LoadScene(int index)
     {
         animator.SetBool("FadeIn", true);

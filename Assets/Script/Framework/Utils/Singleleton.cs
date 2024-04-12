@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public abstract class Singleleton<T> where T : new()
+public abstract class Singleton<T> where T : new()
 {
     private static T _instance;
     private static object mutex = new object();
@@ -12,7 +12,7 @@ public abstract class Singleleton<T> where T : new()
         {
             if (_instance == null)
             {
-                lock (mutex) // ��֤�̰߳�ȫ
+                lock (mutex) // 资源锁
                 {
                     if (_instance == null)
                     {

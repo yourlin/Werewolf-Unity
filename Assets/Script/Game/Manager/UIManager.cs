@@ -25,9 +25,9 @@ public class UIManager : MonoBehaviour
 
 
     /// <summary>
-    /// 订阅(场景切换)
+    /// 
     /// </summary>
-    /// <param name="targetScene">目标场景</param>
+    /// <param name="targetScene">目锟疥场锟斤拷</param>
     private void OnSwitchScenes(string targetScene)
     {
         StartCoroutine(SwitchScenes(targetScene));
@@ -35,36 +35,30 @@ public class UIManager : MonoBehaviour
 
 
     /// <summary>
-    /// 切换场景方法
+    /// 
     /// </summary>
-    /// <param name="targetScene">目标场景</param>
+    /// <param name="targetScene">目锟疥场锟斤拷</param>
     private IEnumerator SwitchScenes(string targetScene)
     {
-        //将加载显示UI界面优先级调高于其他场景的UI界面
         UI.GetComponentInParent<Canvas>().sortingOrder = 1;
 
-        //调用方法 将加载显示UI界面的透明度逐渐调高至完全不透明
         yield return Fade(1);
 
-        //关闭当前激活的场景 (异步)
         yield return SceneManager.UnloadSceneAsync(SceneManager.GetActiveScene());
 
-        //加载需要的场景并设置为激活
         yield return LoadSceneSetActive(targetScene);
 
-        //调用方法 将加载显示UI界面的透明度逐渐调低至完全透明
         yield return Fade(0);
 
-        //恢复加载显示UI界面的优先级
         UI.GetComponentInParent<Canvas>().sortingOrder = -1;
     }
 
 
 
     /// <summary>
-    /// 加载场景并设置为激活
+    /// 
     /// </summary>
-    /// <param name="sceneName">场景名</param>
+    /// <param name="sceneName"></param>
     /// <returns></returns>
     private IEnumerator LoadSceneSetActive(string sceneName)
     {
@@ -74,9 +68,9 @@ public class UIManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 逐渐修改UI界面的透明度
+    /// 
     /// </summary>
-    /// <param name="targetAlpha">修改值</param>
+    /// <param name="targetAlpha"></param>
     /// <returns></returns>
 
     private IEnumerator Fade(float targetAlpha)

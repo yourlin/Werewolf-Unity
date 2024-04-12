@@ -33,7 +33,7 @@ public class OpeningEvent : MonoBehaviour
     public void onQuit()
     {
         #if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;//ÓÃÓÚÍË³öÔËÐÐ
+            UnityEditor.EditorApplication.isPlaying = false;//ï¿½ï¿½ï¿½ï¿½ï¿½Ë³ï¿½ï¿½ï¿½ï¿½ï¿½
         #else
             Application.Quit();
         #endif

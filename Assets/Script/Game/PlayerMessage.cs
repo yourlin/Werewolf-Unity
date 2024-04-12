@@ -13,6 +13,7 @@ public enum PlayerMessageType {
 	Justice = 4,
 	GameConclusion = 5
 }
+
 public class PlayerMessage
 {
 	public int PlayerId { get; set; }
@@ -22,9 +23,4 @@ public class PlayerMessage
 	public int TargetId { get; set; }
 	public GameResult Result { get; set; }
 	public PlayerMessageType Type { get; set; }
-
-	public PlayerMessage ()
-	{
-	}
 }
-
