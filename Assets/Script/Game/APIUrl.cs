@@ -1,7 +1,7 @@
 ﻿using System;
 public class APIUrl
 {
-	private readonly static string baseUrl = "http://werewolflb-388054704.us-east-1.elb.amazonaws.com/";
+	private readonly static string baseUrl = "http://werewolf-demo-1305345708.us-east-1.elb.amazonaws.com/";
 	public readonly static string getPlayer = baseUrl + "getPlayer";
 	public readonly static string startGame = baseUrl + "startGame";
 	public readonly static string stopGame = baseUrl + "stopGame";

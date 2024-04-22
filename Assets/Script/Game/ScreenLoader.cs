@@ -4,12 +4,14 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
-public class ScreenLoader : MonoBehaviour
+public class ScreenLoader : UnitySingleton<ScreenLoader>
 {
     public Animator animator;
+
     // Start is called before the first frame update
-    void Start()
+    override public void Awake()
     {
+
     }
 
     public IEnumerator LoadScene(int index)
@@ -25,8 +27,10 @@ public class ScreenLoader : MonoBehaviour
 
     private void onLoadScene(AsyncOperation operation)
     {
-        animator.SetBool("FadeIn", false);
-        animator.SetBool("FadeOut", true);
+        if (animator) {
+            animator.SetBool ("FadeIn", false);
+            animator.SetBool ("FadeOut", true);
+        }
 
         new WaitForSeconds(1);
     }

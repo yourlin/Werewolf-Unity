@@ -10,13 +10,13 @@ public class GameSetting : Singleton<GameSetting>
     static float gameLoopInterval = 1000f;
 	[SerializeField]
     static int requestTimeout = 1;
+    [SerializeField]
+    static string histroyFilePath = "./history.txt";
 
     public static int PlaySpeed { get => playSpeed; set => playSpeed = value; }
     public static int PlayerNum { get => playerNum; set => playerNum = value; }
 	public static float GameLoopInterval { get => gameLoopInterval; set => gameLoopInterval = value; }
 	public static int RequestTimeout { get => requestTimeout; set => requestTimeout = value; }
-    public static float MessageEndWaitforSeconds { get; internal set; } = 1f;
-
-    // todo 加载配置文件
-
+    public static float MessageEndWaitforSeconds { get; internal set; } = 3f;
+    public static string HistroyFilePath { get => histroyFilePath; set => histroyFilePath = value; }
 }

@@ -7,11 +7,13 @@ using TMPro;
 using UnityEngine.Playables;
 using UnityEngine.Networking;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 public class GameApp : UnitySingleton<GameApp> {
     Queue<PlayerMessage> gameMessages = new Queue<PlayerMessage> ();
     bool isRunning = false;
 
+    public GameObject messagePanel;
     public TMP_Text roundText;
     public TMP_Text playerName;
     public TMP_Text playerMessage;
@@ -33,10 +35,9 @@ public class GameApp : UnitySingleton<GameApp> {
     private readonly int femaleCountMax = 6;
     private int maleCount = 0;
     private readonly int maleCountMax = 6;
-    static readonly string [] MaleNames = { "John", "David", "Michael", "Robert", "William", "James", "Richard", "Joseph", "Thomas", "Charles" };
-    static readonly string [] FemaleNames = { "Emily", "Emma", "Olivia", "Sophia", "Ava", "Isabella", "Mia", "Abigail", "Avery", "Lily" };
     public GameObject playerTemplate;
-    private string histroyFilePath = "./history.txt";
+
+    private bool isEnd = false;
 
     /// <summary>
     /// 初始化
@@ -70,7 +71,8 @@ public class GameApp : UnitySingleton<GameApp> {
                 request.downloadHandler.text,
                 new PlayerProfileConverter ()
                 );
-            Debug.Log ($"{playerProfiles.Length} players will p");
+            Debug.Log ($"{playerProfiles.Length} players will play the game");
+            GameSetting.PlayerNum = playerProfiles.Length;
             foreach (var playerProfile in playerProfiles) {
                 SpawnPlayer (playerTemplate,
                     playerProfile,
@@ -85,7 +87,7 @@ public class GameApp : UnitySingleton<GameApp> {
 
     public GameObject SpawnPlayer (GameObject instance, PlayerProfile profile, Transform parent) {
         currentPlayerNum++;
-        GameObject playerObject = GameObject.Instantiate (instance, parent.transform.position, Quaternion.identity, parent);
+        GameObject playerObject = GameObject.Instantiate (instance, parent.transform.position, UnityEngine.Quaternion.identity, parent);
         // enable player avatar sync avatar data
         var player = playerObject.GetComponent<PlayerCtrl> ();
         profile.Gender = UnityEngine.Random.Range (1, 2) == 1 ? PlayerGender.Female : PlayerGender.Male; // 随机性别
@@ -135,8 +137,8 @@ public class GameApp : UnitySingleton<GameApp> {
         IsRunning = true;
         DateTime startTime = DateTime.Now;
         while (IsRunning) {
-            StartCoroutine(GetMsg ());
-            HandleMsg ();
+            StartCoroutine (GetMsg ());
+            StartCoroutine(HandleMsg ());
             TimeSpan timeDifference = DateTime.Now - startTime;
             if (timeDifference.TotalMilliseconds < GameSetting.GameLoopInterval) {
                 float waitMilliseconds = GameSetting.GameLoopInterval - (float)timeDifference.TotalMilliseconds;
@@ -153,34 +155,34 @@ public class GameApp : UnitySingleton<GameApp> {
     IEnumerator GetMsg()
     {
         if (isMsgHandling) {
+            yield return new WaitForSeconds (1);
             yield break;
         }
 
-        // mock up 等待1秒
-        //int id = UnityEngine.Random.Range (1, GameSetting.PlayerNum);
-        //PlayerMessage msg = new PlayerMessage ();
-        //msg.Round = id;
-        //msg.PlayerName = $"Player{id}";
-        //msg.PlayerId = id;
-        //msg.TargetId = id - 1 > 0 ? id - 1 : id + 1;
-        //msg.Type = PlayerMessageType.WolfMessage;
-        //msg.Message = $"This is {msg.PlayerName} speaking, test test test 中文测试 test test test test test test test中文测试。This is {msg.PlayerName} speaking 中文测试,This is {msg.PlayerName} speaking,This is {msg.PlayerName} speaking,This is {msg.PlayerName} speaking,This is {msg.PlayerName} speaking,This is {msg.PlayerName} speaking,This is {msg.PlayerName} speaking,This is {msg.PlayerName} speaking,This is {msg.PlayerName} speaking,This is {msg.PlayerName} speaking,This is {msg.PlayerName} speaking,This is {msg.PlayerName} speaking,This is {msg.PlayerName} speaking,This is {msg.PlayerName} speaking, ";
-        //gameMessages.Enqueue (msg);
-
-		UnityWebRequest request = UnityWebRequest.Get (APIUrl.getMsg);
+        Debug.Log ("请求Msg");
+        UnityWebRequest request = UnityWebRequest.Get (APIUrl.getMsg);
 		request.timeout = GameSetting.RequestTimeout;
 		yield return request.SendWebRequest ();
 
 		if (request.result == UnityWebRequest.Result.Success) {
-			// 请求成功,处理响应数据
-			
-			// parse response message
-			PlayerMessage []messages = JsonConvert.DeserializeObject<PlayerMessage []> (request.downloadHandler.text);
-            Debug.Log ($"Recv: {messages.Length} messages");
-            foreach (var msg in messages) {
-                gameMessages.Enqueue (msg);
+            // 请求成功,处理响应数据
+            var jsonData = JsonConvert.DeserializeObject<JObject> (request.downloadHandler.text);
+            isEnd = (bool)jsonData ["end"];
+            if (!isEnd) {
+                Debug.Log ("游戏进行中");
             }
-            
+            List<PlayerMessage> messages = JsonConvert.DeserializeObject<List<PlayerMessage>> (
+                jsonData ["messages"].ToString (),
+                new PlayerMessageConverter());
+
+            if(messages.Count > 0) {
+                Debug.Log ($"Recv: {messages.Count} messages");
+                Debug.Log (request.downloadHandler.text);
+                foreach (var msg in messages) {
+                    gameMessages.Enqueue (msg);
+                }
+            }
+
             yield return null;
 		} else {
 			// 请求失败,输出错误信息
@@ -188,15 +190,15 @@ public class GameApp : UnitySingleton<GameApp> {
 		}
     }
 
-    void HandleMsg () {
+    IEnumerator HandleMsg () {
         while (GameMessages.Count != 0) {
             if (isMsgHandling) {
-                Debug.Log ("处理消息中");
+                yield return new WaitForSeconds (1);
                 continue;
             }
             isMsgHandling = true;
             PlayerMessage msg = GameMessages.Dequeue ();
-
+            AppendMessageToHistory (msg);
             if (IsRoundChanged (msg.Round)) {
                 DayText.text = $"Day {msg.Round}";
                 StartCoroutine (ShowRoundBoard (msg.Round));
@@ -231,26 +233,40 @@ public class GameApp : UnitySingleton<GameApp> {
 
     private void onJustice (PlayerMessage msg) {
         foreach (var item in dictPlayerObjects) {
-            var player = item.Value.GetComponent<PlayerCtrl> ();
-            if (player.State != PlayerState.Dead) {
-                player.State = PlayerState.Busy;
+            var p = item.Value.GetComponent<PlayerCtrl> ();
+            if (p.State != PlayerState.Dead) {
+                p.State = PlayerState.Busy;
             }
+        }
+        var player = dictPlayerObjects [msg.PlayerId].GetComponent<PlayerCtrl> ();
+        roundText.text = $"Round {msg.Round} - Wolf";
+        playerName.text = $"{msg.PlayerName}(Wolf)";
+        playerImg.sprite = PlayerImageList [msg.PlayerId % GameSetting.PlayerNum];
+        StartCoroutine (TypeText (player, playerMessage, msg.Message.content, 0.01f));
+        // 获取被杀死的对象
+        if (msg.TargetId != 0) {
+            var targetPlayer = dictPlayerObjects [msg.TargetId].GetComponent<PlayerCtrl> ();
+            targetPlayer.State = PlayerState.Dead;
+            Debug.Log ($"Player {targetPlayer.Profile.Id} was voted");
         }
     }
 
     private void onProphetMessage (PlayerMessage msg) {
         Debug.Log ($"{msg.PlayerName} 预言家发言");
+        Debug.Log ($"{msg.ToString ()}");
         var player = dictPlayerObjects [msg.PlayerId].GetComponent<PlayerCtrl> ();
         roundText.text = $"Round {msg.Round} - Wolf";
         playerName.text = $"{msg.PlayerName}(Wolf)";
         playerImg.sprite = PlayerImageList [msg.PlayerId % GameSetting.PlayerNum];
 
-        StartCoroutine (TypeText (player, playerMessage, msg.Message, 0.01f));
+        StartCoroutine (TypeText (player, playerMessage, msg.Message.content, 0.01f));
 
-        // 获取被杀死的对象
-        var targetPlayer = dictPlayerObjects [msg.TargetId].GetComponent<PlayerCtrl> ();
-        targetPlayer.State = PlayerState.Dead;
-        Debug.Log ($"Player {targetPlayer.Profile.Id} was detected");
+        // 获取被探测的对象
+        if (msg.TargetId != 0) {
+            var targetPlayer = dictPlayerObjects [msg.TargetId].GetComponent<PlayerCtrl> ();
+            targetPlayer.State = PlayerState.Dead;
+            Debug.Log ($"Player {targetPlayer.Profile.Id} was detected");
+        }
     }
 
     void onWolfMessage (PlayerMessage msg) {
@@ -260,12 +276,14 @@ public class GameApp : UnitySingleton<GameApp> {
         playerName.text = $"{msg.PlayerName}(Wolf)";
         playerImg.sprite = PlayerImageList [msg.PlayerId % GameSetting.PlayerNum];
 
-        StartCoroutine (TypeText (player, playerMessage, msg.Message, 0.01f));
+        StartCoroutine (TypeText (player, playerMessage, msg.Message.content, 0.01f));
 
         // 获取被杀死的对象
-        var targetPlayer = dictPlayerObjects [msg.TargetId].GetComponent<PlayerCtrl> ();
-        targetPlayer.State = PlayerState.Dead;
-        Debug.Log ($"Player {targetPlayer.Profile.Id} was killed");
+        if (msg.TargetId != 0) {
+            var targetPlayer = dictPlayerObjects [msg.TargetId].GetComponent<PlayerCtrl> ();
+            targetPlayer.State = PlayerState.Dead;
+            Debug.Log ($"Player {targetPlayer.Profile.Id} was killed");
+        }
     }
 
     void onPlayerMessage (PlayerMessage msg) {
@@ -279,10 +297,11 @@ public class GameApp : UnitySingleton<GameApp> {
         roundText.text = $"Round {msg.Round}";
         playerName.text = msg.PlayerName;
         playerImg.sprite = PlayerImageList [msg.PlayerId % GameSetting.PlayerNum];
-        StartCoroutine (TypeText (player, playerMessage, msg.Message, 0.01f));
+        StartCoroutine (TypeText (player, playerMessage, msg.Message.content, 0.01f));
     }
 
     IEnumerator TypeText (PlayerCtrl playerCtrl, TMP_Text tMP_text, string str, float interval) {
+        messagePanel.SetActive (true);
         playerCtrl.State = PlayerState.Busy;
         int i = 0;
         while (i <= str.Length) {
@@ -294,6 +313,7 @@ public class GameApp : UnitySingleton<GameApp> {
         yield return new WaitForSeconds (GameSetting.MessageEndWaitforSeconds);
         yield return isMsgHandling = false;
         yield return playerCtrl.State = PlayerState.Idle;
+        messagePanel.SetActive (false);
     }
 
     bool IsRoundChanged (int round) {
@@ -312,6 +332,17 @@ public class GameApp : UnitySingleton<GameApp> {
     }
 
     void AppendMessageToHistory (PlayerMessage msg) {
-        FileHelper.AppendTextToFile (histroyFilePath, msg.ToString ());
+        FileHelper.AppendTextToFile (GameSetting.HistroyFilePath, msg.ToString ());
+    }
+
+    public Sprite GetPlayerImg(PlayerProfile profile) {
+        int offset = 0;
+        if (profile.Gender == PlayerGender.Male) {
+            offset = profile.Id % maleCount + 6;
+        } else if (profile.Gender == PlayerGender.Female) {
+            offset = profile.Id % femaleCount;
+        }
+
+        return PlayerImageList [offset];
     }
 }

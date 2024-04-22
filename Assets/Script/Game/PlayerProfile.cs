@@ -7,7 +7,8 @@ using UnityEngine;
 public enum PlayerRole {
 	Villager = 1, // 村民
 	Wolf = 2,     // 狼人
-	Prophet = 3   // 预言家
+	Prophet = 3,   // 预言家
+    Witch = 4       // 女巫
 }
 
 public enum PlayerState {
@@ -115,6 +116,7 @@ public class PlayerProfileConverter : JsonConverter {
             "预言家" => PlayerRole.Prophet,
             "村民" => PlayerRole.Villager,
             "狼人" => PlayerRole.Wolf,
+            "女巫" => PlayerRole.Witch,
             _ => throw new JsonSerializationException($"Invalid role value: {roleString}"),
         };
     }
@@ -131,4 +133,16 @@ public class PlayerProfileConverter : JsonConverter {
     //public override bool CanConvert (Type objectType) {
     //    throw new NotImplementedException ();
     //}
+}
+
+public static class PlayerRoleExtensions {
+    public static string ToString (this PlayerRole role) {
+        return role switch {
+            PlayerRole.Villager => "村民",
+            PlayerRole.Wolf => "狼人",
+            PlayerRole.Prophet => "预言家",
+            PlayerRole.Witch => "女巫",
+            _ => throw new ArgumentOutOfRangeException (nameof (role), role, null)
+        };
+    }
 }

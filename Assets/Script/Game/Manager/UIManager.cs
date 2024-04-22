@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 
 public class UIManager : MonoBehaviour
@@ -23,11 +25,10 @@ public class UIManager : MonoBehaviour
         SceneSwitchEventHandler.SwitchScenes += OnSwitchScenes;
     }
 
-
     /// <summary>
     /// 
     /// </summary>
-    /// <param name="targetScene">Ŀ�곡��</param>
+    /// <param name="targetScene">场景名</param>
     private void OnSwitchScenes(string targetScene)
     {
         StartCoroutine(SwitchScenes(targetScene));
@@ -37,7 +38,7 @@ public class UIManager : MonoBehaviour
     /// <summary>
     /// 
     /// </summary>
-    /// <param name="targetScene">Ŀ�곡��</param>
+    /// <param name="targetScene">场景名</param>
     private IEnumerator SwitchScenes(string targetScene)
     {
         UI.GetComponentInParent<Canvas>().sortingOrder = 1;
@@ -53,12 +54,10 @@ public class UIManager : MonoBehaviour
         UI.GetComponentInParent<Canvas>().sortingOrder = -1;
     }
 
-
-
     /// <summary>
-    /// 
+    /// 切换并激活场景
     /// </summary>
-    /// <param name="sceneName"></param>
+    /// <param name="sceneName">场景名</param>
     /// <returns></returns>
     private IEnumerator LoadSceneSetActive(string sceneName)
     {
