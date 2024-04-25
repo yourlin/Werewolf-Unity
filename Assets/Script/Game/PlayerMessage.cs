@@ -20,6 +20,17 @@ public class MessageContent {
     public string content;
 }
 
+public enum GameStage {
+    Unknown = 0,
+    NightWolf = 1,
+    NightPropht = 2,
+    NightWitch = 3,
+    NightAction = 4,
+    DeathWords = 5,
+    DayDebate = 6,
+    DayVote = 7,
+    Assistant = 8
+}
 
 public enum PlayerMessageType {
     PlayerMessage = 1,
@@ -45,6 +56,8 @@ public class PlayerMessage {
     public GameResult Result { get; set; }
     [SerializeField]
     public PlayerMessageType Type { get; set; }
+    [SerializeField]
+    public GameStage Stage { get; set; }
     [SerializeField]
     public bool IsDay { get; set; }
     [SerializeField]
@@ -74,7 +87,8 @@ public class PlayerMessageConverter : JsonConverter {
             Round = jsonObject ["round"] != null ? (int)jsonObject ["round"] : 0,
             IsDay = jsonObject ["is_day"] != null ? (bool)jsonObject ["is_day"] : false,
             CurrentTime = jsonObject ["current_time"]?.ToString (),
-            Type = jsonObject ["type"] != null ? (PlayerMessageType)Enum.Parse (typeof (PlayerMessageType), (string)jsonObject ["type"], true) : PlayerMessageType.PlayerMessage
+            Type = jsonObject ["type"] != null ? (PlayerMessageType)Enum.Parse (typeof (PlayerMessageType), (string)jsonObject ["type"], true) : PlayerMessageType.PlayerMessage,
+            Stage = jsonObject ["stage"] != null ? (GameStage)Enum.Parse (typeof (GameStage), (string)jsonObject ["stage"], true) : GameStage.Unknown
         };
 
         if (jsonObject ["result"] != null) {
@@ -121,6 +135,9 @@ public class PlayerMessageConverter : JsonConverter {
 
         writer.WritePropertyName ("type");
         writer.WriteValue (playerMessage.Type.ToString ());
+
+        writer.WritePropertyName ("stage");
+        writer.WriteValue (playerMessage.Stage.ToString ());
 
         writer.WritePropertyName ("result");
         writer.WriteStartObject ();

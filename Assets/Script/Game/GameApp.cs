@@ -90,28 +90,26 @@ public class GameApp : UnitySingleton<GameApp> {
         GameObject playerObject = GameObject.Instantiate (instance, parent.transform.position, UnityEngine.Quaternion.identity, parent);
         // enable player avatar sync avatar data
         var player = playerObject.GetComponent<PlayerCtrl> ();
-        profile.Gender = UnityEngine.Random.Range (1, 2) == 1 ? PlayerGender.Female : PlayerGender.Male; // 随机性别
-        var overrideController = new AnimatorOverrideController (
-            player.GetComponent<Animator> ().runtimeAnimatorController
-            );
+        profile.Gender = UnityEngine.Random.Range (1, 3) == 1 ? PlayerGender.Female : PlayerGender.Male; // 随机性别
 
-        // 生成前缀
-        string newClipPrefix = "";
-        if (profile.Gender == PlayerGender.Male) {
-            //player.PlayerName = MaleNames [maleCount];
-            maleCount++;
-            newClipPrefix = $"male_{maleCount % maleCountMax + 1:D2}_";
-        } else if (profile.Gender == PlayerGender.Female) {
-            //player.PlayerName = FemaleNames [femaleCount];
-            femaleCount++;
-            newClipPrefix = $"female_{femaleCount % femaleCountMax + 1:D2}_";
-        }
-        foreach (var clipPrefix in clipList) {
-            overrideController [clipPrefix] = Resources.Load<AnimationClip> ($"/Animations/{newClipPrefix}{clipPrefix}.anim");
-        }
-
+        // 生成AC前缀，载入对应的AC
         Animator animator = playerObject.GetComponent<Animator> ();
-        animator.runtimeAnimatorController = overrideController;
+        string ac = "";
+        if (profile.Gender == PlayerGender.Male) {
+            ac = $"male_{profile.Id % maleCountMax + 1:D2}";
+        } else if (profile.Gender == PlayerGender.Female) {
+            ac = $"female_{profile.Id % femaleCountMax + 1:D2}";
+        }
+        animator.runtimeAnimatorController = Resources.Load<AnimatorOverrideController> (ac);
+        if (currentPlayerNum < 3) {
+            animator.SetInteger ("Direction", 3);
+        } else if (currentPlayerNum < 5) {
+            animator.SetInteger ("Direction", 1);
+        } else if (currentPlayerNum < 8) {
+            animator.SetInteger ("Direction", 0);
+        } else {
+            animator.SetInteger ("Direction", 2);
+        }
         player.Profile = profile;
         dictPlayerObjects.Add (profile.Id, playerObject);
         return playerObject;
@@ -137,7 +135,10 @@ public class GameApp : UnitySingleton<GameApp> {
         IsRunning = true;
         DateTime startTime = DateTime.Now;
         while (IsRunning) {
-            StartCoroutine (GetMsg ());
+            if (!isEnd) {
+                StartCoroutine (GetMsg ());
+            }
+
             StartCoroutine(HandleMsg ());
             TimeSpan timeDifference = DateTime.Now - startTime;
             if (timeDifference.TotalMilliseconds < GameSetting.GameLoopInterval) {
@@ -155,7 +156,6 @@ public class GameApp : UnitySingleton<GameApp> {
     IEnumerator GetMsg()
     {
         if (isMsgHandling) {
-            yield return new WaitForSeconds (1);
             yield break;
         }
 
@@ -198,30 +198,33 @@ public class GameApp : UnitySingleton<GameApp> {
             }
             isMsgHandling = true;
             PlayerMessage msg = GameMessages.Dequeue ();
-            AppendMessageToHistory (msg);
+            AppendMessageToHistory (msg); // 添加到历史记录里
+
+            // 回合切换动画
             if (IsRoundChanged (msg.Round)) {
                 DayText.text = $"Day {msg.Round}";
                 StartCoroutine (ShowRoundBoard (msg.Round));
                 this.currentRound = msg.Round;
             }
 
-            switch (msg.Type) {
-            case PlayerMessageType.PlayerMessage:
-                onPlayerMessage (msg);
-                break;
-            case PlayerMessageType.WolfMessage:
-                onWolfMessage (msg);
-                break;
-            case PlayerMessageType.ProphetMessage:
-                onProphetMessage (msg);
-                break;
-            case PlayerMessageType.Justice:
-                onJustice (msg);
-                break;
-            case PlayerMessageType.GameConclusion:
-                onGameConclusion (msg);
-                break;
-            }
+            onPlayerMessage (msg);
+            //switch (msg.Type) {
+            //case PlayerMessageType.PlayerMessage:
+            //    onPlayerMessage (msg);
+            //    break;
+            //case PlayerMessageType.WolfMessage:
+            //    onWolfMessage (msg);
+            //    break;
+            //case PlayerMessageType.ProphetMessage:
+            //    onProphetMessage (msg);
+            //    break;
+            //case PlayerMessageType.Justice:
+            //    onJustice (msg);
+            //    break;
+            //case PlayerMessageType.GameConclusion:
+            //    onGameConclusion (msg);
+            //    break;
+            //}
         }
     }
 
@@ -338,9 +341,9 @@ public class GameApp : UnitySingleton<GameApp> {
     public Sprite GetPlayerImg(PlayerProfile profile) {
         int offset = 0;
         if (profile.Gender == PlayerGender.Male) {
-            offset = profile.Id % maleCount + 6;
+            offset = profile.Id % maleCountMax + 6;
         } else if (profile.Gender == PlayerGender.Female) {
-            offset = profile.Id % femaleCount;
+            offset = profile.Id % femaleCountMax;
         }
 
         return PlayerImageList [offset];
