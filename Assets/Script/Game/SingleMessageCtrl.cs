@@ -10,16 +10,4 @@ public class SingleMessageCtrl : MonoBehaviour
     public Image Avatar;
     public TMP_Text Role;
     public TMP_Text Name;
-
-    // Start is called before the first frame update
-    void Start()
-    {
-
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 }

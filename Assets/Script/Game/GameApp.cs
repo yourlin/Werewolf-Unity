@@ -31,11 +31,10 @@ public class GameApp : UnitySingleton<GameApp> {
 
     private List<string> clipList = new List<string> ();
     private int currentPlayerNum = 0;
-    private int femaleCount = 0;
     private readonly int femaleCountMax = 6;
-    private int maleCount = 0;
     private readonly int maleCountMax = 6;
     public GameObject playerTemplate;
+    public GameObject WorldTime;
 
     private bool isEnd = false;
 
@@ -111,6 +110,9 @@ public class GameApp : UnitySingleton<GameApp> {
             animator.SetInteger ("Direction", 2);
         }
         player.Profile = profile;
+        if (profile.State == PlayerState.Dead) {
+            animator.SetBool ("Death", true);
+        }
         dictPlayerObjects.Add (profile.Id, playerObject);
         return playerObject;
     }
@@ -135,11 +137,15 @@ public class GameApp : UnitySingleton<GameApp> {
         IsRunning = true;
         DateTime startTime = DateTime.Now;
         while (IsRunning) {
+            if (isEnd && GameMessages.Count == 0) {
+                IsRunning = false;
+                break;
+            }
             if (!isEnd) {
                 StartCoroutine (GetMsg ());
             }
 
-            StartCoroutine(HandleMsg ());
+            StartCoroutine (HandleMsg ());
             TimeSpan timeDifference = DateTime.Now - startTime;
             if (timeDifference.TotalMilliseconds < GameSetting.GameLoopInterval) {
                 float waitMilliseconds = GameSetting.GameLoopInterval - (float)timeDifference.TotalMilliseconds;
@@ -147,24 +153,25 @@ public class GameApp : UnitySingleton<GameApp> {
                 startTime = DateTime.Now;
             }
         }
+
+        Debug.Log ("游戏已经结束。");
     }
 
     /// <summary>
     /// Get a message
     /// </summary>
     /// <returns></returns>
-    IEnumerator GetMsg()
-    {
+    IEnumerator GetMsg () {
         if (isMsgHandling) {
             yield break;
         }
 
         Debug.Log ("请求Msg");
         UnityWebRequest request = UnityWebRequest.Get (APIUrl.getMsg);
-		request.timeout = GameSetting.RequestTimeout;
-		yield return request.SendWebRequest ();
+        request.timeout = GameSetting.RequestTimeout;
+        yield return request.SendWebRequest ();
 
-		if (request.result == UnityWebRequest.Result.Success) {
+        if (request.result == UnityWebRequest.Result.Success) {
             // 请求成功,处理响应数据
             var jsonData = JsonConvert.DeserializeObject<JObject> (request.downloadHandler.text);
             isEnd = (bool)jsonData ["end"];
@@ -173,21 +180,22 @@ public class GameApp : UnitySingleton<GameApp> {
             }
             List<PlayerMessage> messages = JsonConvert.DeserializeObject<List<PlayerMessage>> (
                 jsonData ["messages"].ToString (),
-                new PlayerMessageConverter());
+                new PlayerMessageConverter ());
 
-            if(messages.Count > 0) {
+            if (messages.Count > 0) {
                 Debug.Log ($"Recv: {messages.Count} messages");
                 Debug.Log (request.downloadHandler.text);
                 foreach (var msg in messages) {
+                    AppendMessageToHistory (msg); // 添加到历史记录里
                     gameMessages.Enqueue (msg);
                 }
             }
 
             yield return null;
-		} else {
-			// 请求失败,输出错误信息
-			Debug.LogError ("Error: " + request.error);
-		}
+        } else {
+            // 请求失败,输出错误信息
+            Debug.LogError ("Error: " + request.error);
+        }
     }
 
     IEnumerator HandleMsg () {
@@ -198,7 +206,6 @@ public class GameApp : UnitySingleton<GameApp> {
             }
             isMsgHandling = true;
             PlayerMessage msg = GameMessages.Dequeue ();
-            AppendMessageToHistory (msg); // 添加到历史记录里
 
             // 回合切换动画
             if (IsRoundChanged (msg.Round)) {
@@ -229,7 +236,7 @@ public class GameApp : UnitySingleton<GameApp> {
     }
 
     private void onGameConclusion (PlayerMessage msg) {
-        Conclusion.SetActive(true);
+        Conclusion.SetActive (true);
         ConclusionCtrl conclusionCtrl = Conclusion.GetComponent<ConclusionCtrl> ();
         conclusionCtrl.SetConclusion ("sdfdsfsdfdsfsdfdsfdsfsd");
     }
@@ -301,6 +308,13 @@ public class GameApp : UnitySingleton<GameApp> {
         playerName.text = msg.PlayerName;
         playerImg.sprite = PlayerImageList [msg.PlayerId % GameSetting.PlayerNum];
         StartCoroutine (TypeText (player, playerMessage, msg.Message.content, 0.01f));
+        var worldTime = WorldTime.GetComponent<WorldTime.WorldTime> ();
+        if (msg.CurrentTime.Split ("-") [0] == "DAY") {
+            worldTime.SetDayTime ();
+        } else {
+            worldTime.SetNightTime ();
+        }
+
     }
 
     IEnumerator TypeText (PlayerCtrl playerCtrl, TMP_Text tMP_text, string str, float interval) {
@@ -338,7 +352,7 @@ public class GameApp : UnitySingleton<GameApp> {
         FileHelper.AppendTextToFile (GameSetting.HistroyFilePath, msg.ToString ());
     }
 
-    public Sprite GetPlayerImg(PlayerProfile profile) {
+    public Sprite GetPlayerImg (PlayerProfile profile) {
         int offset = 0;
         if (profile.Gender == PlayerGender.Male) {
             offset = profile.Id % maleCountMax + 6;
