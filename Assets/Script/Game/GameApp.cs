@@ -251,7 +251,7 @@ public class GameApp : UnitySingleton<GameApp> {
         var player = dictPlayerObjects [msg.PlayerId].GetComponent<PlayerCtrl> ();
         roundText.text = $"Round {msg.Round} - Wolf";
         playerName.text = $"{msg.PlayerName}(Wolf)";
-        playerImg.sprite = PlayerImageList [msg.PlayerId % GameSetting.PlayerNum];
+        playerImg.sprite = GetPlayerImg(player.Profile);
         StartCoroutine (TypeText (player, playerMessage, msg.Message.content, 0.01f));
         // 获取被杀死的对象
         if (msg.TargetId != 0) {
@@ -267,7 +267,7 @@ public class GameApp : UnitySingleton<GameApp> {
         var player = dictPlayerObjects [msg.PlayerId].GetComponent<PlayerCtrl> ();
         roundText.text = $"Round {msg.Round} - Wolf";
         playerName.text = $"{msg.PlayerName}(Wolf)";
-        playerImg.sprite = PlayerImageList [msg.PlayerId % GameSetting.PlayerNum];
+        playerImg.sprite = GetPlayerImg (player.Profile);
 
         StartCoroutine (TypeText (player, playerMessage, msg.Message.content, 0.01f));
 
@@ -284,7 +284,7 @@ public class GameApp : UnitySingleton<GameApp> {
         var player = dictPlayerObjects [msg.PlayerId].GetComponent<PlayerCtrl> ();
         roundText.text = $"Round {msg.Round} - Wolf";
         playerName.text = $"{msg.PlayerName}(Wolf)";
-        playerImg.sprite = PlayerImageList [msg.PlayerId % GameSetting.PlayerNum];
+        playerImg.sprite = GetPlayerImg (player.Profile);
 
         StartCoroutine (TypeText (player, playerMessage, msg.Message.content, 0.01f));
 
@@ -306,7 +306,7 @@ public class GameApp : UnitySingleton<GameApp> {
         var player = dictPlayerObjects [msg.PlayerId].GetComponent<PlayerCtrl> ();
         roundText.text = $"Round {msg.Round}";
         playerName.text = msg.PlayerName;
-        playerImg.sprite = PlayerImageList [msg.PlayerId % GameSetting.PlayerNum];
+        playerImg.sprite = GetPlayerImg (player.Profile);
         StartCoroutine (TypeText (player, playerMessage, msg.Message.content, 0.01f));
         var worldTime = WorldTime.GetComponent<WorldTime.WorldTime> ();
         if (msg.CurrentTime.Split ("-") [0] == "DAY") {

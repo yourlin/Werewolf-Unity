@@ -31,12 +31,16 @@ public class MainEventManager : MonoBehaviour
         #endif
     }
 
-    public void onBackToMenu () {
+    public async void onBackToMenu () {
+        GameApp gameApp = App.GetComponent<GameApp>();
+        gameApp.IsRunning = false;
         FileHelper.ClearFile (GameSetting.HistroyFilePath);
+        await StopGame ();
         StartCoroutine (screenLoader.LoadScene (0));
     }
 
     private async Task<string> StopGame () {
+        
         using UnityWebRequest request = UnityWebRequest.Get(APIUrl.stopGame);
         _ = request.SendWebRequest();
 
