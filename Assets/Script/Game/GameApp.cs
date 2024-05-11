@@ -9,11 +9,17 @@ using UnityEngine.Networking;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
+
 public class GameApp : UnitySingleton<GameApp> {
     Queue<PlayerMessage> gameMessages = new Queue<PlayerMessage> ();
+    [SerializeField]
+    bool isMockEnding = false;
+    [SerializeField]
+    private bool isSkipMessageWait;
     bool isRunning = false;
 
     public GameObject messagePanel;
+    public TMP_Text ErrorMessage;
     public TMP_Text roundText;
     public TMP_Text playerName;
     public TMP_Text playerMessage;
@@ -27,6 +33,8 @@ public class GameApp : UnitySingleton<GameApp> {
 
     public bool IsRunning { get => isRunning; set => isRunning = value; }
     public Queue<PlayerMessage> GameMessages { get => gameMessages; set => gameMessages = value; }
+    public bool IsSkipMessageWait { get => isSkipMessageWait; set => isSkipMessageWait = value; }
+
     public Dictionary<int, GameObject> dictPlayerObjects = new Dictionary<int, GameObject> ();
 
     private List<string> clipList = new List<string> ();
@@ -42,6 +50,9 @@ public class GameApp : UnitySingleton<GameApp> {
     /// 初始化
     /// </summary>
     public void InitGame () {
+        GameSetting.Init ();
+        IsRunning = true;
+        isEnd = false;
         clipList.Add ("Busy");
         clipList.Add ("Death");
         clipList.Add ("Dying");
@@ -89,7 +100,6 @@ public class GameApp : UnitySingleton<GameApp> {
         GameObject playerObject = GameObject.Instantiate (instance, parent.transform.position, UnityEngine.Quaternion.identity, parent);
         // enable player avatar sync avatar data
         var player = playerObject.GetComponent<PlayerCtrl> ();
-        profile.Gender = UnityEngine.Random.Range (1, 3) == 1 ? PlayerGender.Female : PlayerGender.Male; // 随机性别
 
         // 生成AC前缀，载入对应的AC
         Animator animator = playerObject.GetComponent<Animator> ();
@@ -133,6 +143,7 @@ public class GameApp : UnitySingleton<GameApp> {
     /// </summary>
     /// <returns></returns>
     IEnumerator run () {
+
         Debug.Log ("Begin Game Loop");
         IsRunning = true;
         DateTime startTime = DateTime.Now;
@@ -142,7 +153,11 @@ public class GameApp : UnitySingleton<GameApp> {
                 break;
             }
             if (!isEnd) {
-                StartCoroutine (GetMsg ());
+                if (isMockEnding) {
+                    StartCoroutine (GetEndingMsg ());
+                } else {
+                    StartCoroutine (GetMsg ());
+                }
             }
 
             StartCoroutine (HandleMsg ());
@@ -198,6 +213,44 @@ public class GameApp : UnitySingleton<GameApp> {
         }
     }
 
+    IEnumerator GetEndingMsg () {
+        if (isMsgHandling || isEnd) {
+            yield break;
+        }
+
+        Debug.Log ("请求Ending Msg");
+        UnityWebRequest request = UnityWebRequest.Get (APIUrl.getEndingMsg);
+        request.timeout = GameSetting.RequestTimeout;
+        yield return request.SendWebRequest ();
+
+        if (request.result == UnityWebRequest.Result.Success) {
+            // 请求成功,处理响应数据
+            var jsonData = JsonConvert.DeserializeObject<JObject> (request.downloadHandler.text);
+            Debug.Log (request.downloadHandler.text);
+            isEnd = (bool)jsonData ["end"];
+            if (!isEnd) {
+                Debug.Log ("游戏进行中");
+            }
+            List<PlayerMessage> messages = JsonConvert.DeserializeObject<List<PlayerMessage>> (
+                jsonData ["messages"].ToString (),
+                new PlayerMessageConverter ());
+
+            if (messages.Count > 0) {
+                Debug.Log ($"Recv: {messages.Count} messages");
+                Debug.Log (request.downloadHandler.text);
+                foreach (var msg in messages) {
+                    AppendMessageToHistory (msg); // 添加到历史记录里
+                    gameMessages.Enqueue (msg);
+                }
+            }
+
+            yield return null;
+        } else {
+            // 请求失败,输出错误信息
+            Debug.LogError ("Error: " + request.error);
+        }
+    }
+
     IEnumerator HandleMsg () {
         while (GameMessages.Count != 0) {
             if (isMsgHandling) {
@@ -214,31 +267,25 @@ public class GameApp : UnitySingleton<GameApp> {
                 this.currentRound = msg.Round;
             }
 
-            onPlayerMessage (msg);
-            //switch (msg.Type) {
-            //case PlayerMessageType.PlayerMessage:
-            //    onPlayerMessage (msg);
-            //    break;
-            //case PlayerMessageType.WolfMessage:
-            //    onWolfMessage (msg);
-            //    break;
-            //case PlayerMessageType.ProphetMessage:
-            //    onProphetMessage (msg);
-            //    break;
-            //case PlayerMessageType.Justice:
-            //    onJustice (msg);
-            //    break;
-            //case PlayerMessageType.GameConclusion:
-            //    onGameConclusion (msg);
-            //    break;
-            //}
+            if (msg.Stage == GameStage.Assistant) {
+
+            } else { }
+            
+            switch (msg.Stage) {
+            case GameStage.Assistant:
+                onGameConclusion (msg);
+                break;
+            default:
+                onPlayerMessage (msg);
+                break;
+            }
         }
     }
 
     private void onGameConclusion (PlayerMessage msg) {
         Conclusion.SetActive (true);
         ConclusionCtrl conclusionCtrl = Conclusion.GetComponent<ConclusionCtrl> ();
-        conclusionCtrl.SetConclusion ("sdfdsfsdfdsfsdfdsfdsfsd");
+        conclusionCtrl.SetConclusion (msg.Message.content);
     }
 
     private void onJustice (PlayerMessage msg) {
@@ -327,7 +374,13 @@ public class GameApp : UnitySingleton<GameApp> {
         }
 
         // 消息结束的等待
-        yield return new WaitForSeconds (GameSetting.MessageEndWaitforSeconds);
+        if (!IsSkipMessageWait) {
+            yield return new WaitUntil (() => Input.GetMouseButtonDown (0));
+            Debug.Log ("点击继续");
+        } else {
+            yield return new WaitForSeconds (GameSetting.MessageEndWaitforSeconds);
+        }
+        
         yield return isMsgHandling = false;
         yield return playerCtrl.State = PlayerState.Idle;
         messagePanel.SetActive (false);
@@ -361,5 +414,16 @@ public class GameApp : UnitySingleton<GameApp> {
         }
 
         return PlayerImageList [offset];
+    }
+
+    public void ToggleSkip () {
+        IsSkipMessageWait = !IsSkipMessageWait;
+    }
+
+    public void SetSkip (bool value) {
+        IsSkipMessageWait = value;
+        if (value) {
+            
+        }
     }
 }

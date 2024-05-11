@@ -103,8 +103,8 @@ public class PlayerProfileConverter : JsonConverter {
     private PlayerGender ParseGender (string genderString) {
         return genderString switch
         {
-            "男" => PlayerGender.Male,
-            "女" => PlayerGender.Female,
+            "0" => PlayerGender.Male,
+            "1" => PlayerGender.Female,
             null => PlayerGender.Female,
             _ => throw new JsonSerializationException($"Invalid gender value: {genderString}"),
         };

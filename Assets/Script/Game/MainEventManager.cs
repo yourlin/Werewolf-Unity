@@ -14,10 +14,15 @@ public class MainEventManager : MonoBehaviour
     public GameObject HistoryContent;
     public GameObject MessagePrefab;
     public GameObject App;
+    GameApp gameApp;
+    public Button ManualBtn;
+    public Button AutoBtn;
+
 
     // Start is called before the first frame update
     void Awake()
     {
+        gameApp = App.GetComponent<GameApp> ();
         screenLoader = GetComponent<ScreenLoader> ();
     }
 
@@ -32,7 +37,7 @@ public class MainEventManager : MonoBehaviour
     }
 
     public async void onBackToMenu () {
-        GameApp gameApp = App.GetComponent<GameApp>();
+
         gameApp.IsRunning = false;
         FileHelper.ClearFile (GameSetting.HistroyFilePath);
         await StopGame ();
@@ -72,7 +77,6 @@ public class MainEventManager : MonoBehaviour
         string [] lines= FileHelper.ReadFromFile (GameSetting.HistroyFilePath);
         Debug.Log ($"显示历史记录{lines.Length}条");
         //List<PlayerMessage> messageList = new List<PlayerMessage> ();
-        GameApp gameApp = App.GetComponent<GameApp> ();
         
         foreach (string line in lines) {
             // 尝试将每一行反序列化为 PlayerMessage 对象
@@ -96,5 +100,11 @@ public class MainEventManager : MonoBehaviour
 
         HistoryPanel.SetActive(true);
 
+    }
+
+    public void onChangeSkip (bool value) {
+        gameApp.SetSkip (value);
+        AutoBtn.enabled = !value;
+        ManualBtn.enabled = value;
     }
 }

@@ -16,6 +16,7 @@ public class OpeningCtrl : MonoBehaviour {
     // Start is called before the first frame update
     void Awake () {
         screenLoader = GetComponent<ScreenLoader> ();
+        GameSetting.Init ();
     }
 
     // Update is called once per frame
