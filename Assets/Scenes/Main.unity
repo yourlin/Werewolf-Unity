@@ -10453,8 +10453,8 @@ MonoBehaviour:
   HistoryContent: {fileID: 384071487}
   MessagePrefab: {fileID: 7032944688261509272, guid: fbf86628aa346469092bd2cd2aafc416, type: 3}
   App: {fileID: 1736001196}
-  ManualBtn: {fileID: 0}
-  AutoBtn: {fileID: 0}
+  ManualBtn: {fileID: 1609333372}
+  AutoBtn: {fileID: 839715092}
 --- !u!95 &1284923071
 Animator:
   serializedVersion: 7
@@ -11182,11 +11182,11 @@ RectTransform:
   - {fileID: 1578940533}
   m_Father: {fileID: 1995506266}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -536.1, y: 29.7}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 19, y: -15.299999}
   m_SizeDelta: {x: 160, y: 30}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_Pivot: {x: 0, y: 1}
 --- !u!114 &1508318124
 MonoBehaviour:
   m_ObjectHideFlags: 0

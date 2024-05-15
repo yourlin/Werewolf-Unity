@@ -352,7 +352,7 @@ public class GameApp : UnitySingleton<GameApp> {
 
         var player = dictPlayerObjects [msg.PlayerId].GetComponent<PlayerCtrl> ();
         roundText.text = $"Round {msg.Round}";
-        playerName.text = msg.PlayerName;
+        playerName.text = msg.PlayerName + " (" + player.Profile.Role.ToString() +")";
         playerImg.sprite = GetPlayerImg (player.Profile);
         StartCoroutine (TypeText (player, playerMessage, msg.Message.content, 0.01f));
         var worldTime = WorldTime.GetComponent<WorldTime.WorldTime> ();
