@@ -61,17 +61,14 @@ public class GameApp : UnitySingleton<GameApp> {
         clipList.Add ("Idle_Right");
         clipList.Add ("Idle_Up");
 
-        GetOnlinePlayers ();
-
-        // get start
-        StartCoroutine (run ());
+        StartCoroutine(GetOnlinePlayers());
     }
 
-    async void GetOnlinePlayers () {
+    IEnumerator GetOnlinePlayers () {
         using UnityWebRequest request = UnityWebRequest.Get (APIUrl.getPlayer);
         request.timeout = GameSetting.RequestTimeout;
-        await request.SendWebRequest ();
-
+        yield return request.SendWebRequest();
+        Debug.Log(request.result);
         if (request.result == UnityWebRequest.Result.Success) {
             // 请求成功,处理响应数据
             // parse response message
@@ -82,17 +79,23 @@ public class GameApp : UnitySingleton<GameApp> {
                 new PlayerProfileConverter ()
                 );
             Debug.Log ($"{playerProfiles.Length} players will play the game");
+
             GameSetting.PlayerNum = playerProfiles.Length;
             foreach (var playerProfile in playerProfiles) {
+                yield return new WaitForSeconds(0.5f);
                 SpawnPlayer (playerTemplate,
                     playerProfile,
                     respawn.transform.GetChild (currentPlayerNum)
                     );
             }
+
+            
         } else {
             // 请求失败,输出错误信息
             Debug.LogError ("Error: " + request.error);
         }
+
+        StartCoroutine(Run());
     }
 
     public GameObject SpawnPlayer (GameObject instance, PlayerProfile profile, Transform parent) {
@@ -111,13 +114,13 @@ public class GameApp : UnitySingleton<GameApp> {
         }
         animator.runtimeAnimatorController = Resources.Load<AnimatorOverrideController> (ac);
         if (currentPlayerNum < 3) {
-            animator.SetInteger ("Direction", 3);
-        } else if (currentPlayerNum < 5) {
             animator.SetInteger ("Direction", 1);
-        } else if (currentPlayerNum < 8) {
+        } else if (currentPlayerNum < 6) {
             animator.SetInteger ("Direction", 0);
-        } else {
+        } else if (currentPlayerNum < 9) {
             animator.SetInteger ("Direction", 2);
+        } else {
+            animator.SetInteger ("Direction", 3);
         }
         player.Profile = profile;
         if (profile.State == PlayerState.Dead) {
@@ -142,7 +145,7 @@ public class GameApp : UnitySingleton<GameApp> {
     /// Game loop
     /// </summary>
     /// <returns></returns>
-    IEnumerator run () {
+    IEnumerator Run () {
 
         Debug.Log ("Begin Game Loop");
         IsRunning = true;

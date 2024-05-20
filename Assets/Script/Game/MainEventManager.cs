@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class MainEventManager : MonoBehaviour
@@ -34,6 +35,7 @@ public class MainEventManager : MonoBehaviour
         #else
             Application.Quit ();
         #endif
+
     }
 
     public async void onBackToMenu () {
@@ -41,11 +43,12 @@ public class MainEventManager : MonoBehaviour
         gameApp.IsRunning = false;
         FileHelper.ClearFile (GameSetting.HistroyFilePath);
         await StopGame ();
+        
         StartCoroutine (screenLoader.LoadScene (0));
     }
 
     private async Task<string> StopGame () {
-        
+
         using UnityWebRequest request = UnityWebRequest.Get(APIUrl.stopGame);
         _ = request.SendWebRequest();
 
@@ -103,8 +106,11 @@ public class MainEventManager : MonoBehaviour
     }
 
     public void onChangeSkip (bool value) {
+        Debug.Log(value);
         gameApp.SetSkip (value);
-        AutoBtn.enabled = !value;
-        ManualBtn.enabled = value;
+        AutoBtn.gameObject.SetActive(!value);
+        ManualBtn.gameObject.SetActive(value);
+        //AutoBtn.enabled = !value;
+        //ManualBtn.enabled = value;
     }
 }

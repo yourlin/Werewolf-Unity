@@ -26,7 +26,7 @@ public class OpeningCtrl : MonoBehaviour {
 
     public void onStart () {
         Debug.Log ("Start");
-        StartCoroutine (StartGame ());
+        StartCoroutine (StartGame());
 
     }
 
@@ -42,6 +42,10 @@ public class OpeningCtrl : MonoBehaviour {
 #endif
     }
 
+    IEnumerator EnterNextStage()
+    {
+        yield return screenLoader.LoadScene(1);
+    }
 
     IEnumerator StartGame () {
         ErrorMessage.text = "";
@@ -53,7 +57,7 @@ public class OpeningCtrl : MonoBehaviour {
         
         if (request.result == UnityWebRequest.Result.Success) {
             Debug.Log ("开始游戏");
-            yield return screenLoader.LoadScene (1);
+            yield return screenLoader.LoadScene(1);
         } else {
             // 请求失败,输出错误信息
             Debug.LogError ("Error: " + request.error);
