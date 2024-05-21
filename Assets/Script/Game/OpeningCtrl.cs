@@ -26,7 +26,7 @@ public class OpeningCtrl : MonoBehaviour {
 
     public void onStart () {
         Debug.Log ("Start");
-        StartCoroutine (StartGame());
+        StartCoroutine (EnterNextStage());
 
     }
 

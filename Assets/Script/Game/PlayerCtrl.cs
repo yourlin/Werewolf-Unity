@@ -1,4 +1,5 @@
 using System;
+using System.Xml;
 using TMPro;
 using UnityEngine;
 
@@ -41,6 +42,7 @@ public class PlayerCtrl : MonoBehaviour
             {
                 gameObject.GetComponent<SpriteRenderer>().material.SetColor("_OutlineColor", Color.red);
             }
+            
         }
     }
 
@@ -57,8 +59,25 @@ public class PlayerCtrl : MonoBehaviour
 		namePos.z = 0;
 		nameLabel.transform.position = namePos + new Vector3(0.0f, 35.0f, 0.0f);
         nameLabel.text = profile.Name;
-        roleLabel.transform.position = namePos + new Vector3(0.0f, 50.0f, 0.0f);
+        roleLabel.transform.position = namePos + new Vector3(0.0f, 55.0f, 0.0f);
         roleLabel.text = profile.Role.ToString();
+        Debug.Log(profile.Role);
+        if (profile.Role == PlayerRole.Villager)
+        {
+            roleLabel.color = Color.gray;
+        }
+        else if (profile.Role == PlayerRole.Prophet)
+        {
+            roleLabel.color = Color.yellow;
+        }
+        else if (profile.Role == PlayerRole.Witch)
+        {
+            roleLabel.color = Color.green;
+        }
+        else if (profile.Role == PlayerRole.Wolf)
+        {
+            roleLabel.color = Color.red;
+        }
     }
 
 }

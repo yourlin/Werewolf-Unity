@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using TMPro;
+using Unity.Burst.Intrinsics;
+using UnityEditor;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -18,7 +21,6 @@ public class MainEventManager : MonoBehaviour
     GameApp gameApp;
     public Button ManualBtn;
     public Button AutoBtn;
-
 
     // Start is called before the first frame update
     void Awake()
@@ -36,6 +38,11 @@ public class MainEventManager : MonoBehaviour
             Application.Quit ();
         #endif
 
+    }
+
+    public void OnPlayGame()
+    {
+        gameApp.EyesClose();
     }
 
     public async void onBackToMenu () {

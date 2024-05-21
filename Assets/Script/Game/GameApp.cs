@@ -2,15 +2,20 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+using DG.Tweening;
+
 using System;
 using TMPro;
 using UnityEngine.Playables;
 using UnityEngine.Networking;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using UnityEngine.UI;
+using UnityEditor;
+using Unity.VisualScripting;
 
-
-public class GameApp : UnitySingleton<GameApp> {
+public class GameApp : MonoBehaviour
+{
     Queue<PlayerMessage> gameMessages = new Queue<PlayerMessage> ();
     [SerializeField]
     bool isMockEnding = false;
@@ -30,6 +35,7 @@ public class GameApp : UnitySingleton<GameApp> {
     public GameObject Roundboard;
     private int currentRound = 0;
     public GameObject Conclusion;
+    public Button PlayBtn;
 
     public bool IsRunning { get => isRunning; set => isRunning = value; }
     public Queue<PlayerMessage> GameMessages { get => gameMessages; set => gameMessages = value; }
@@ -46,13 +52,21 @@ public class GameApp : UnitySingleton<GameApp> {
 
     private bool isEnd = false;
 
+    private DG.Tweening.Sequence se;
+
+
+    void Start()
+    {
+        InitGame();
+    }
+
     /// <summary>
     /// 初始化
     /// </summary>
     public void InitGame () {
         GameSetting.Init ();
-        IsRunning = true;
-        isEnd = false;
+        StopFlag();
+
         clipList.Add ("Busy");
         clipList.Add ("Death");
         clipList.Add ("Dying");
@@ -68,18 +82,17 @@ public class GameApp : UnitySingleton<GameApp> {
         using UnityWebRequest request = UnityWebRequest.Get (APIUrl.getPlayer);
         request.timeout = GameSetting.RequestTimeout;
         yield return request.SendWebRequest();
-        Debug.Log(request.result);
+
         if (request.result == UnityWebRequest.Result.Success) {
             // 请求成功,处理响应数据
             // parse response message
-            var respawn = GameObject.FindGameObjectWithTag ("Respawn");
-            PlayerProfile [] playerProfiles =
+            PlayerProfile[] playerProfiles =
                 JsonConvert.DeserializeObject<PlayerProfile []> (
                 request.downloadHandler.text,
                 new PlayerProfileConverter ()
                 );
             Debug.Log ($"{playerProfiles.Length} players will play the game");
-
+            var respawn = GameObject.FindGameObjectWithTag("Respawn");
             GameSetting.PlayerNum = playerProfiles.Length;
             foreach (var playerProfile in playerProfiles) {
                 yield return new WaitForSeconds(0.5f);
@@ -89,13 +102,13 @@ public class GameApp : UnitySingleton<GameApp> {
                     );
             }
 
-            
+            EyesOpen(true);
         } else {
             // 请求失败,输出错误信息
             Debug.LogError ("Error: " + request.error);
         }
 
-        StartCoroutine(Run());
+        // StartCoroutine(RunLoop());
     }
 
     public GameObject SpawnPlayer (GameObject instance, PlayerProfile profile, Transform parent) {
@@ -130,25 +143,44 @@ public class GameApp : UnitySingleton<GameApp> {
         return playerObject;
     }
 
-    void Start () {
-        InitGame ();
+    void StartFlag() {
+        IsRunning = true;
+        isEnd = false;
     }
 
-    /// <summary>
-    /// Stop game
-    /// </summary>
-    void Stop () {
+    void StopFlag () {
         IsRunning = false;
+        isEnd = true;
+    }
+
+    IEnumerator StartGame()
+    {
+        ErrorMessage.text = "";
+        UnityWebRequest request = UnityWebRequest.Get(APIUrl.startGame);
+        request.timeout = GameSetting.RequestTimeout;
+        yield return request.SendWebRequest();
+
+        if (request.result == UnityWebRequest.Result.Success)
+        {
+            yield return new WaitForSeconds(3);
+            StartCoroutine(RunLoop());
+        }
+        else
+        {
+            // 请求失败,输出错误信息
+            Debug.LogError("Error: " + request.error);
+            ErrorMessage.text = request.error;
+
+        }
     }
 
     /// <summary>
     /// Game loop
     /// </summary>
     /// <returns></returns>
-    IEnumerator Run () {
-
-        Debug.Log ("Begin Game Loop");
-        IsRunning = true;
+    IEnumerator RunLoop() {
+        StartFlag();
+        Debug.Log ($"Begin Game Loop: {IsRunning}, {isEnd}");
         DateTime startTime = DateTime.Now;
         while (IsRunning) {
             if (isEnd && GameMessages.Count == 0) {
@@ -162,7 +194,7 @@ public class GameApp : UnitySingleton<GameApp> {
                     StartCoroutine (GetMsg ());
                 }
             }
-
+            Debug.Log($"Begin Game Loop: {IsRunning}, {isEnd}");
             StartCoroutine (HandleMsg ());
             TimeSpan timeDifference = DateTime.Now - startTime;
             if (timeDifference.TotalMilliseconds < GameSetting.GameLoopInterval) {
@@ -170,9 +202,10 @@ public class GameApp : UnitySingleton<GameApp> {
                 yield return new WaitForSeconds (waitMilliseconds / 1000.0f);
                 startTime = DateTime.Now;
             }
+            Debug.Log($"Begin Game Loop: {IsRunning}, {isEnd}");
         }
 
-        Debug.Log ("游戏已经结束。");
+        Debug.Log($"End Game Loop: {IsRunning}, {isEnd}");
     }
 
     /// <summary>
@@ -266,14 +299,10 @@ public class GameApp : UnitySingleton<GameApp> {
             // 回合切换动画
             if (IsRoundChanged (msg.Round)) {
                 DayText.text = $"Day {msg.Round}";
-                StartCoroutine (ShowRoundBoard (msg.Round));
+                StartCoroutine (ShowRoundBoard ($"Round {msg.Round}"));
                 this.currentRound = msg.Round;
             }
-
-            if (msg.Stage == GameStage.Assistant) {
-
-            } else { }
-            
+            yield return new WaitForSeconds(2);
             switch (msg.Stage) {
             case GameStage.Assistant:
                 onGameConclusion (msg);
@@ -361,8 +390,10 @@ public class GameApp : UnitySingleton<GameApp> {
         var worldTime = WorldTime.GetComponent<WorldTime.WorldTime> ();
         if (msg.CurrentTime.Split ("-") [0] == "DAY") {
             worldTime.SetDayTime ();
+            EyesOpen();
         } else {
             worldTime.SetNightTime ();
+            EyesClose();
         }
 
     }
@@ -393,13 +424,13 @@ public class GameApp : UnitySingleton<GameApp> {
         return currentRound != round;
     }
 
-    IEnumerator ShowRoundBoard (int roundNum) {
+    IEnumerator ShowRoundBoard (string content) {
         Debug.Log ("播放round动画");
         var roundText = Roundboard.transform.gameObject.GetComponentInChildren<TMP_Text> ();
-        roundText.text = $"Round {roundNum}";
+        roundText.text = content;
         PlayableDirector director = Roundboard.GetComponent<PlayableDirector> ();
         Roundboard.SetActive (true);
-        director.Play ();
+        director.Play();
         yield return new WaitForSeconds (3);
         Roundboard.SetActive (false);
     }
@@ -429,4 +460,23 @@ public class GameApp : UnitySingleton<GameApp> {
             
         }
     }
+
+    public void EyesOpen(bool flag = false) {
+        PlayBtn.GetComponent<Image>().sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/GUI/ExportedIcons/Icon_Look.png") as Sprite;
+        PlayBtn.enabled = flag;
+    }
+
+    public void EyesClose(bool flag = false)
+    {
+        PlayBtn.GetComponent<Image>().sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/GUI/ExportedIcons/Icon_DontLook.png") as Sprite;
+        PlayBtn.enabled = flag;
+        Debug.Log(IsRunning);
+        if (!IsRunning)
+        {
+            StartCoroutine(ShowRoundBoard($"Game Start"));
+            StartCoroutine(StartGame());
+        }
+            
+    }
+
 }

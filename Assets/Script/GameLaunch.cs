@@ -12,13 +12,12 @@ public class GameLaunch : MonoBehaviour
         checkHotUpdate();
 
         initGameLogic();
-        
     }
 
     private void initGameLogic()
     {
-        this.gameObject.AddComponent<GameApp>();
-        GameApp.Instance.InitGame();
+        //this.gameObject.AddComponent<GameApp>();
+        //GameApp.Instance.InitGame();
     }
 
     private void checkHotUpdate()
