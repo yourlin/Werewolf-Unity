@@ -11,8 +11,10 @@ using UnityEngine.Networking;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine.UI;
+
+#if UNITY_EDITOR
 using UnityEditor;
-using Unity.VisualScripting;
+#endif
 
 public class GameApp : MonoBehaviour
 {
@@ -462,13 +464,13 @@ public class GameApp : MonoBehaviour
     }
 
     public void EyesOpen(bool flag = false) {
-        PlayBtn.GetComponent<Image>().sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/GUI/ExportedIcons/Icon_Look.png") as Sprite;
+        PlayBtn.GetComponent<Image>().sprite = Resources.Load<Sprite>("Images/Icon_Look");
         PlayBtn.enabled = flag;
     }
 
     public void EyesClose(bool flag = false)
     {
-        PlayBtn.GetComponent<Image>().sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/GUI/ExportedIcons/Icon_DontLook.png") as Sprite;
+        PlayBtn.GetComponent<Image>().sprite = Resources.Load<Sprite>("Images/Icon_DontLook");
         PlayBtn.enabled = flag;
         Debug.Log(IsRunning);
         if (!IsRunning)
