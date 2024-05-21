@@ -77,7 +77,7 @@ public class GameApp : MonoBehaviour
         clipList.Add ("Idle_Right");
         clipList.Add ("Idle_Up");
 
-        StartCoroutine(GetOnlinePlayers());
+        // StartCoroutine(GetOnlinePlayers());
     }
 
     IEnumerator GetOnlinePlayers () {
@@ -157,6 +157,7 @@ public class GameApp : MonoBehaviour
 
     IEnumerator StartGame()
     {
+        StartCoroutine(ShowRoundBoard($"Game Start"));
         ErrorMessage.text = "";
         UnityWebRequest request = UnityWebRequest.Get(APIUrl.startGame);
         request.timeout = GameSetting.RequestTimeout;
@@ -164,6 +165,7 @@ public class GameApp : MonoBehaviour
 
         if (request.result == UnityWebRequest.Result.Success)
         {
+            StartCoroutine(GetOnlinePlayers());
             yield return new WaitForSeconds(3);
             StartCoroutine(RunLoop());
         }
@@ -475,7 +477,6 @@ public class GameApp : MonoBehaviour
         Debug.Log(IsRunning);
         if (!IsRunning)
         {
-            StartCoroutine(ShowRoundBoard($"Game Start"));
             StartCoroutine(StartGame());
         }
             
