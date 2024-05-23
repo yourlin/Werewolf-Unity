@@ -117,6 +117,14 @@ public class PlayerProfileConverter : JsonConverter {
             "村民" => PlayerRole.Villager,
             "狼人" => PlayerRole.Wolf,
             "女巫" => PlayerRole.Witch,
+            "prophet" => PlayerRole.Prophet,
+            "villager" => PlayerRole.Villager,
+            "wolf" => PlayerRole.Wolf,
+            "witch" => PlayerRole.Witch,
+            "Prophet" => PlayerRole.Prophet,
+            "Villager" => PlayerRole.Villager,
+            "Wolf" => PlayerRole.Wolf,
+            "Witch" => PlayerRole.Witch,
             _ => throw new JsonSerializationException($"Invalid role value: {roleString}"),
         };
     }

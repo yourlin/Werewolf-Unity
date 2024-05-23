@@ -334,6 +334,7 @@ RectTransform:
   m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 1159785278}
   - {fileID: 1995506266}
   - {fileID: 317371795}
   - {fileID: 521727510}
@@ -341,7 +342,6 @@ RectTransform:
   - {fileID: 879935058}
   - {fileID: 176684937}
   - {fileID: 1447620573}
-  - {fileID: 1159785278}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -13778,6 +13778,7 @@ MonoBehaviour:
   roundText: {fileID: 2043600610}
   playerName: {fileID: 1748955014}
   playerMessage: {fileID: 501016417}
+  RuleMessage: {fileID: 1825074442}
   playerImg: {fileID: 1130968846}
   PlayerImageList:
   - {fileID: 21300000, guid: b92176608c724e248a201132c60d5c4f, type: 3}
@@ -14179,6 +14180,26 @@ PrefabInstance:
       propertyPath: m_SizeDelta.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1281361509745207961, guid: bebad11e174dd457cb63f86890e198ac, type: 3}
+      propertyPath: m_fontSize
+      value: 16
+      objectReference: {fileID: 0}
+    - target: {fileID: 1281361509745207961, guid: bebad11e174dd457cb63f86890e198ac, type: 3}
+      propertyPath: m_fontSizeBase
+      value: 16
+      objectReference: {fileID: 0}
+    - target: {fileID: 1281361509745207961, guid: bebad11e174dd457cb63f86890e198ac, type: 3}
+      propertyPath: m_HorizontalAlignment
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1422497630904340411, guid: bebad11e174dd457cb63f86890e198ac, type: 3}
+      propertyPath: m_text
+      value: WereWolf Rules
+      objectReference: {fileID: 0}
+    - target: {fileID: 1918104344588091998, guid: bebad11e174dd457cb63f86890e198ac, type: 3}
+      propertyPath: m_Horizontal
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3827356929671364486, guid: bebad11e174dd457cb63f86890e198ac, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 100.00085
@@ -14227,6 +14248,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8097372791011206713, guid: bebad11e174dd457cb63f86890e198ac, type: 3}
+      propertyPath: m_Size
+      value: 0.67698634
+      objectReference: {fileID: 0}
     - target: {fileID: 8671801210229262972, guid: bebad11e174dd457cb63f86890e198ac, type: 3}
       propertyPath: m_Name
       value: MsgBox
@@ -14257,6 +14282,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: bebad11e174dd457cb63f86890e198ac, type: 3}
+--- !u!114 &1825074442 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1281361509745207961, guid: bebad11e174dd457cb63f86890e198ac, type: 3}
+  m_PrefabInstance: {fileID: 1825074441}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1850837216
 GameObject:
   m_ObjectHideFlags: 0

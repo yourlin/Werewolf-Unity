@@ -13,6 +13,10 @@ public class OpeningCtrl : MonoBehaviour {
     //public Texture2D NormalCursorTexture;
     public Texture2D busyCursorTexture;
     public TMP_Text ErrorMessage;
+
+
+    public static int StartGameLang = 0;
+
     // Start is called before the first frame update
     void Awake () {
         screenLoader = GetComponent<ScreenLoader> ();
@@ -24,10 +28,18 @@ public class OpeningCtrl : MonoBehaviour {
 
     }
 
-    public void onStart () {
-        Debug.Log ("Start");
+    public void onStartCN() {
+        Debug.Log ("Start CN");
+        StartGameLang = 0;
         StartCoroutine (EnterNextStage());
 
+    }
+
+    public void onStartEN()
+    {
+        Debug.Log("Start EN");
+        StartGameLang = 1;
+        StartCoroutine(EnterNextStage());
     }
 
     public void onSetting () {
@@ -51,7 +63,12 @@ public class OpeningCtrl : MonoBehaviour {
         ErrorMessage.text = "";
         StartButton.interactable = false;
         Cursor.SetCursor (busyCursorTexture, Vector2.zero, CursorMode.Auto);
-        UnityWebRequest request = UnityWebRequest.Get (APIUrl.startGame);
+        string requestUrl = APIUrl.startGameCN;
+        if (OpeningCtrl.StartGameLang == 1)
+        {
+            requestUrl = APIUrl.startGameEN;
+        }
+        UnityWebRequest request = UnityWebRequest.Get (requestUrl);
         request.timeout = GameSetting.RequestTimeout;
         yield return request.SendWebRequest ();
         

@@ -30,6 +30,7 @@ public class GameApp : MonoBehaviour
     public TMP_Text roundText;
     public TMP_Text playerName;
     public TMP_Text playerMessage;
+    public TMP_Text RuleMessage;
     public UnityEngine.UI.Image playerImg;
     public List<Sprite> PlayerImageList;
     private bool isMsgHandling = false;
@@ -38,6 +39,7 @@ public class GameApp : MonoBehaviour
     private int currentRound = 0;
     public GameObject Conclusion;
     public Button PlayBtn;
+    
 
     public bool IsRunning { get => isRunning; set => isRunning = value; }
     public Queue<PlayerMessage> GameMessages { get => gameMessages; set => gameMessages = value; }
@@ -77,7 +79,77 @@ public class GameApp : MonoBehaviour
         clipList.Add ("Idle_Right");
         clipList.Add ("Idle_Up");
 
-        // StartCoroutine(GetOnlinePlayers());
+
+        if (OpeningCtrl.StartGameLang == 0)
+        {
+            RuleMessage.text = @"
+**模型id**
+
+ACTOR: anthropic.claude-3-sonnet-20240229-v1:0
+REVISOR: anthropic.claude-3-sonnet-20240229-v1:0
+SUMMARY: mistral.mixtral-8x7b-instruct-v0:1/meta.llama3-8b-instruct-v1:0
+
+采用了 CoT+Relfextion+Few-Shots 模式
+
+**游戏规则**
+
+1.游戏分坏人和好人两大阵营, 
+- 坏人阵营只有狼人,好人阵营有女巫，预言家和村民
+- 阵营配置:2狼 1预言家 1女巫 4村民
+- 坏人阵营:消灭所有好人,或者保证坏人数目大于好人数目
+- 好人阵营:女巫和预言家要利用自己特殊能力保护村民消灭所有坏人
+
+2.游戏分白天和夜晚两个阶段交替进行:
+- 夜晚所有玩家闭眼，行动不会暴露身份
+-- 夜晚狼人的行动必须统一投票淘汰一名玩家,优先淘汰有身份玩家(非村民)
+-- 夜晚预言家必须查验一名玩家身份
+-- 夜晚女巫必须使用一种药水, 救援玩家优先级高于淘汰玩家
+-- 夜晚普通村民晚上无法行动
+- 白天所有玩家睁眼, 分为讨论和投票两环节
+-- 白天:讨论环节，每个玩家必须参与讨论发言
+-- 白天:投票环节，每个玩家必须投票或者放弃
+
+3.道具解释：
+- 女巫只有一瓶毒药和一瓶解药
+-- 毒药可以立马淘汰一名玩家
+-- 解药可以让淘汰的玩家复活
+            ";
+        }
+        else {
+            RuleMessage.text = @"
+**Model id**
+
+ACTOR: anthropic.claude-3-sonnet-20240229-v1:0
+REVISOR: anthropic.claude-3-sonnet-20240229-v1:0
+SUMMARY: mistral.mixtral-8x7b-instruct-v0:1/meta.llama3-8b-instruct-v1:0
+
+Adopt CoT+Relfextion+Few-Shots Method for PE
+
+**Game Rule**
+
+1.The game is divided into two teams: the bad guys and the good guys.
+- The bad guys tream only has werewolves, while the good guys team has a witch, a prophet, and villagers.
+- Team configuration: 2Wolf 1Prophet 1Witch 4Villager
+- Bad guys team: Eliminate all good guys or ensure the number of bad guys is greater than the number of good guys.
+- Good guys team: The witch and the prophet must use their special abilities to protect the villagers and eliminate all bad guys.
+
+2.The game alternates between night and day phases:
+- At night, all players keep their eyes closed, and actions do not reveal identities.
+-- At night, the werewolves must unanimously vote to eliminate one player, prioritizing the elimination of players with roles (non-villagers).
+-- At night, the prophet must verify the identity of one player.
+-- At night, the witch must use one potion, with the priority of rescuing a player over eliminating a player.
+-- At night, ordinary villagers cannot take any action.
+
+3. During the day, all players open their eyes, and the phase is divided into discussion and voting segments.
+-- Day: Discussion segment, each player must participate in the discussion and speak.
+-- Day: Voting segment, each player must vote or abstain.
+
+4.Items:
+-The witch has only one poison vial and one antidote vial.
+-- The poison vial can immediately eliminate one player.
+-- The antidote vial can revive an eliminated player.
+            ";
+        }
     }
 
     IEnumerator GetOnlinePlayers () {
@@ -159,7 +231,13 @@ public class GameApp : MonoBehaviour
     {
         StartCoroutine(ShowRoundBoard($"Game Start"));
         ErrorMessage.text = "";
-        UnityWebRequest request = UnityWebRequest.Get(APIUrl.startGame);
+        string requestUrl = APIUrl.startGameCN;
+        if (OpeningCtrl.StartGameLang == 1)
+        {
+            requestUrl = APIUrl.startGameEN;
+        }
+        Debug.Log(requestUrl);
+        UnityWebRequest request = UnityWebRequest.Get(requestUrl);
         request.timeout = GameSetting.RequestTimeout;
         yield return request.SendWebRequest();
 
