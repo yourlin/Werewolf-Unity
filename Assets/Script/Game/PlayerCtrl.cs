@@ -61,22 +61,27 @@ public class PlayerCtrl : MonoBehaviour
         nameLabel.text = profile.Name;
         roleLabel.transform.position = namePos + new Vector3(0.0f, 55.0f, 0.0f);
         roleLabel.text = profile.Role.ToString();
-        Debug.Log(profile.Role);
+
+        // Debug.Log(profile.Role);
         if (profile.Role == PlayerRole.Villager)
         {
             roleLabel.color = Color.gray;
+            gameObject.GetComponent<SpriteRenderer>().material.SetColor("_OutlineColor", Color.white);
         }
         else if (profile.Role == PlayerRole.Prophet)
         {
             roleLabel.color = Color.yellow;
+            gameObject.GetComponent<SpriteRenderer>().material.SetColor("_OutlineColor", Color.yellow);
         }
         else if (profile.Role == PlayerRole.Witch)
         {
             roleLabel.color = Color.green;
+            gameObject.GetComponent<SpriteRenderer>().material.SetColor("_OutlineColor", Color.blue);
         }
         else if (profile.Role == PlayerRole.Wolf)
         {
             roleLabel.color = Color.red;
+            gameObject.GetComponent<SpriteRenderer>().material.SetColor("_OutlineColor", Color.red);
         }
     }
 

@@ -11,6 +11,7 @@ using UnityEngine.Networking;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine.UI;
+using NUnit.Framework;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -53,6 +54,7 @@ public class GameApp : MonoBehaviour
     private readonly int maleCountMax = 6;
     public GameObject playerTemplate;
     public GameObject WorldTime;
+    public TMP_Text GameStageTxt;
 
     private bool isEnd = false;
 
@@ -256,6 +258,14 @@ Adopt CoT+Relfextion+Few-Shots Method for PE
         }
     }
 
+    IEnumerator FakeStartGame()
+    {
+        yield return new WaitForSeconds(3);
+        StartCoroutine(GetOnlinePlayers());
+        yield return new WaitForSeconds(3);
+        StartCoroutine(RunLoop());
+    }
+
     /// <summary>
     /// Game loop
     /// </summary>
@@ -269,6 +279,7 @@ Adopt CoT+Relfextion+Few-Shots Method for PE
                 IsRunning = false;
                 break;
             }
+
             if (!isEnd) {
                 if (isMockEnding) {
                     StartCoroutine (GetEndingMsg ());
@@ -305,24 +316,49 @@ Adopt CoT+Relfextion+Few-Shots Method for PE
         yield return request.SendWebRequest ();
 
         if (request.result == UnityWebRequest.Result.Success) {
+            //Debug.Log(request.downloadHandler.text);
             // 请求成功,处理响应数据
             var jsonData = JsonConvert.DeserializeObject<JObject> (request.downloadHandler.text);
             isEnd = (bool)jsonData ["end"];
             if (!isEnd) {
                 Debug.Log ("游戏进行中");
             }
+            Debug.Log(request.downloadHandler.text);
+
             List<PlayerMessage> messages = JsonConvert.DeserializeObject<List<PlayerMessage>> (
                 jsonData ["messages"].ToString (),
                 new PlayerMessageConverter ());
-
-            if (messages.Count > 0) {
-                Debug.Log ($"Recv: {messages.Count} messages");
-                Debug.Log (request.downloadHandler.text);
-                foreach (var msg in messages) {
-                    AppendMessageToHistory (msg); // 添加到历史记录里
-                    gameMessages.Enqueue (msg);
+            if (messages.Count > 0)
+            {
+                Debug.Log($"Recv: {messages.Count} messages");
+                messages.Reverse();
+                foreach (var msg in messages)
+                {
+                    AppendMessageToHistory(msg); // 添加到历史记录里
+                    gameMessages.Enqueue(msg);
                 }
             }
+
+            // parse response players
+            PlayerProfile[] playerProfiles =
+                JsonConvert.DeserializeObject<PlayerProfile[]>(
+                jsonData["players"].ToString(),
+                new PlayerProfileConverter()
+                );
+
+            foreach (var playerProfile in playerProfiles) {
+                // Debug.Log($"{playerProfile.Name}, {playerProfile.State},{playerProfile.Role},");
+                var targetPlayer = dictPlayerObjects[playerProfile.Id].GetComponent<PlayerCtrl>();
+                if (playerProfile.State == PlayerState.Dead || playerProfile.State == PlayerState.Dying)
+                {
+                    targetPlayer.State = PlayerState.Dead;
+                }
+                else
+                {
+
+                }
+            }
+
 
             yield return null;
         } else {
@@ -468,8 +504,13 @@ Adopt CoT+Relfextion+Few-Shots Method for PE
         roundText.text = $"Round {msg.Round}";
         playerName.text = msg.PlayerName + " (" + player.Profile.Role.ToString() +")";
         playerImg.sprite = GetPlayerImg (player.Profile);
+
+       
+
         StartCoroutine (TypeText (player, playerMessage, msg.Message.content, 0.01f));
         var worldTime = WorldTime.GetComponent<WorldTime.WorldTime> ();
+        GameStageTxt.text = msg.Stage.ToString();
+        //worldTime =  msg.Stage;
         if (msg.CurrentTime.Split ("-") [0] == "DAY") {
             worldTime.SetDayTime ();
             EyesOpen();
@@ -544,13 +585,13 @@ Adopt CoT+Relfextion+Few-Shots Method for PE
     }
 
     public void EyesOpen(bool flag = false) {
-        PlayBtn.GetComponent<Image>().sprite = Resources.Load<Sprite>("Images/Icon_Look");
+        PlayBtn.GetComponent<Image>().sprite = Resources.Load<Sprite>("images/Icon_Look");
         PlayBtn.enabled = flag;
     }
 
     public void EyesClose(bool flag = false)
     {
-        PlayBtn.GetComponent<Image>().sprite = Resources.Load<Sprite>("Images/Icon_DontLook");
+        PlayBtn.GetComponent<Image>().sprite = Resources.Load<Sprite>("images/Icon_DontLook");
         PlayBtn.enabled = flag;
         Debug.Log(IsRunning);
         if (!IsRunning)
