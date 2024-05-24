@@ -355,7 +355,7 @@ Adopt CoT+Relfextion+Few-Shots Method for PE
                 }
                 else
                 {
-
+                    targetPlayer.State = PlayerState.Idle;
                 }
             }
 

@@ -2,6 +2,7 @@ using System;
 using System.Xml;
 using TMPro;
 using UnityEngine;
+using static UnityEngine.Rendering.DebugUI;
 
 [Serializable]
 public class PlayerCtrl : MonoBehaviour
@@ -25,23 +26,6 @@ public class PlayerCtrl : MonoBehaviour
 			animator.SetBool ("Death", value == PlayerState.Dead);
 			animator.SetBool ("Idle", value == PlayerState.Idle);
 			animator.SetBool ("Dying", value == PlayerState.Dying);
-
-			if (value == PlayerState.Busy)
-			{
-                gameObject.GetComponent<SpriteRenderer>().material.SetColor("_OutlineColor", Color.green);
-            }
-            else if (value == PlayerState.Idle)
-            {
-                gameObject.GetComponent<SpriteRenderer>().material.SetColor("_OutlineColor", Color.white);
-            }
-            else if (value == PlayerState.Dead)
-            {
-                gameObject.GetComponent<SpriteRenderer>().material.SetColor("_OutlineColor", Color.grey);
-            }
-            else if (value == PlayerState.Dying)
-            {
-                gameObject.GetComponent<SpriteRenderer>().material.SetColor("_OutlineColor", Color.red);
-            }
             
         }
     }
@@ -55,14 +39,36 @@ public class PlayerCtrl : MonoBehaviour
 
     void Update()
     {
-        Vector3 namePos = Camera.main.WorldToScreenPoint(this.transform.position);
-		namePos.z = 0;
-		nameLabel.transform.position = namePos + new Vector3(0.0f, 35.0f, 0.0f);
-        nameLabel.text = profile.Name;
-        roleLabel.transform.position = namePos + new Vector3(0.0f, 55.0f, 0.0f);
-        roleLabel.text = profile.Role.ToString();
+        //      Vector3 namePos = Camera.main.WorldToScreenPoint(this.transform.position);
+        //namePos.z = 0;
+        //nameLabel.transform.position = namePos + new Vector3(0.0f, 35.0f, 0.0f);
+        //      nameLabel.text = profile.Name;
+        //      roleLabel.transform.position = namePos + new Vector3(0.0f, 55.0f, 0.0f);
+        //      roleLabel.text = profile.Role.ToString();
 
         // Debug.Log(profile.Role);
+
+        if (profile.State == PlayerState.Busy)
+        {
+            gameObject.GetComponent<SpriteRenderer>().material.SetColor("_OutlineColor", Color.green);
+            gameObject.transform.Find("StateIcon_Dead").gameObject.SetActive(false);
+        }
+        else if (profile.State == PlayerState.Idle)
+        {
+            gameObject.GetComponent<SpriteRenderer>().material.SetColor("_OutlineColor", Color.white);
+            gameObject.transform.Find("StateIcon_Dead").gameObject.SetActive(false);
+        }
+        else if (profile.State == PlayerState.Dead)
+        {
+            gameObject.GetComponent<SpriteRenderer>().material.SetColor("_OutlineColor", Color.grey);
+            gameObject.transform.Find("StateIcon_Dead").gameObject.SetActive(true);
+        }
+        else if (profile.State == PlayerState.Dying)
+        {
+            gameObject.GetComponent<SpriteRenderer>().material.SetColor("_OutlineColor", Color.red);
+            gameObject.transform.Find("StateIcon_Dead").gameObject.SetActive(true);
+        }
+
         if (profile.Role == PlayerRole.Villager)
         {
             roleLabel.color = Color.gray;

@@ -12,10 +12,10 @@ public enum PlayerRole {
 }
 
 public enum PlayerState {
-    Dead = 0,
+    Dead = -1,
+    Dying = 0,
     Idle = 1,
 	Busy = 2,
-	Dying = 3
 }
 
 public enum PlayerGender {

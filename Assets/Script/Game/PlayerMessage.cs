@@ -23,7 +23,7 @@ public class MessageContent {
 public enum GameStage {
     Unknown = 0,
     NightWolf = 1,
-    NightPropht = 2,
+    NightProphet = 2,
     NightWitch = 3,
     NightAction = 4,
     DeathWords = 5,
