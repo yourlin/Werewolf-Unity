@@ -82,7 +82,7 @@ public class PlayerCtrl : MonoBehaviour
         else if (profile.Role == PlayerRole.Witch)
         {
             roleLabel.color = Color.green;
-            gameObject.GetComponent<SpriteRenderer>().material.SetColor("_OutlineColor", Color.blue);
+            gameObject.GetComponent<SpriteRenderer>().material.SetColor("_OutlineColor", Color.green);
         }
         else if (profile.Role == PlayerRole.Wolf)
         {

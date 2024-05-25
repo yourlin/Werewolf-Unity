@@ -171,7 +171,7 @@ Adopt CoT+Relfextion+Few-Shots Method for PE
             var respawn = GameObject.FindGameObjectWithTag("Respawn");
             GameSetting.PlayerNum = playerProfiles.Length;
             foreach (var playerProfile in playerProfiles) {
-                yield return new WaitForSeconds(0.5f);
+                yield return new WaitForSeconds(0.2f);
                 SpawnPlayer (playerTemplate,
                     playerProfile,
                     respawn.transform.GetChild (currentPlayerNum)
@@ -287,14 +287,17 @@ Adopt CoT+Relfextion+Few-Shots Method for PE
                     StartCoroutine (GetMsg ());
                 }
             }
-            Debug.Log($"Begin Game Loop: {IsRunning}, {isEnd}");
-            StartCoroutine (HandleMsg ());
+            
+            float waitMilliseconds = GameSetting.GameLoopInterval;
             TimeSpan timeDifference = DateTime.Now - startTime;
             if (timeDifference.TotalMilliseconds < GameSetting.GameLoopInterval) {
-                float waitMilliseconds = GameSetting.GameLoopInterval - (float)timeDifference.TotalMilliseconds;
-                yield return new WaitForSeconds (waitMilliseconds / 1000.0f);
+                waitMilliseconds = GameSetting.GameLoopInterval - (float)timeDifference.TotalMilliseconds;
                 startTime = DateTime.Now;
             }
+            yield return new WaitForSeconds(waitMilliseconds / 1000.0f);
+
+            Debug.Log($"Begin Game Loop: {IsRunning}, {isEnd}");
+            StartCoroutine(HandleMsg());
             Debug.Log($"Begin Game Loop: {IsRunning}, {isEnd}");
         }
 
@@ -420,7 +423,7 @@ Adopt CoT+Relfextion+Few-Shots Method for PE
                 StartCoroutine (ShowRoundBoard ($"Round {msg.Round}"));
                 this.currentRound = msg.Round;
             }
-            yield return new WaitForSeconds(2);
+            yield return new WaitForSeconds(1);
             switch (msg.Stage) {
             case GameStage.Assistant:
                 onGameConclusion (msg);
