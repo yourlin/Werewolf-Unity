@@ -19,7 +19,7 @@ using UnityEditor;
 
 public class GameApp : MonoBehaviour
 {
-    Queue<PlayerMessage> gameMessages = new Queue<PlayerMessage> ();
+    Queue<PlayerMessage> gameMessages = new Queue<PlayerMessage> (2);
     [SerializeField]
     bool isMockEnding = false;
     [SerializeField]
@@ -154,43 +154,69 @@ Adopt CoT+Relfextion+Few-Shots Method for PE
         }
     }
 
-    IEnumerator GetOnlinePlayers () {
-        using UnityWebRequest request = UnityWebRequest.Get (APIUrl.getPlayer);
+    IEnumerator GeneratePlayers(String json)
+    {
+        // parse response message
+        PlayerProfile[] playerProfiles =
+            JsonConvert.DeserializeObject<PlayerProfile[]>(
+            json,
+            new PlayerProfileConverter()
+            );
+        Debug.Log($"{playerProfiles.Length} players will play the game");
+        var respawn = GameObject.FindGameObjectWithTag("Respawn");
+        GameSetting.PlayerNum = playerProfiles.Length;
+        foreach (var playerProfile in playerProfiles)
+        {
+            yield return new WaitForSeconds(0.3f);
+            SpawnPlayer(playerTemplate,
+                playerProfile,
+                respawn.transform.GetChild(currentPlayerNum)
+                );
+        }
+
+        // EyesOpen(true);
+
+    }
+
+    IEnumerator RefleshPlayers(Action<String> RefreshSuccess)
+    {
+        using UnityWebRequest request = UnityWebRequest.Get(APIUrl.getPlayer);
         request.timeout = GameSetting.RequestTimeout;
         yield return request.SendWebRequest();
 
-        if (request.result == UnityWebRequest.Result.Success) {
-            // 请求成功,处理响应数据
-            // parse response message
-            PlayerProfile[] playerProfiles =
-                JsonConvert.DeserializeObject<PlayerProfile []> (
-                request.downloadHandler.text,
-                new PlayerProfileConverter ()
-                );
-            Debug.Log ($"{playerProfiles.Length} players will play the game");
-            var respawn = GameObject.FindGameObjectWithTag("Respawn");
-            GameSetting.PlayerNum = playerProfiles.Length;
-            foreach (var playerProfile in playerProfiles) {
-                yield return new WaitForSeconds(0.2f);
-                SpawnPlayer (playerTemplate,
-                    playerProfile,
-                    respawn.transform.GetChild (currentPlayerNum)
-                    );
-            }
-
-            EyesOpen(true);
-        } else {
-            // 请求失败,输出错误信息
-            Debug.LogError ("Error: " + request.error);
+        if (request.result == UnityWebRequest.Result.Success)
+        {
+            RefreshSuccess.Invoke(request.downloadHandler.text);
         }
+        else
+        {
+            // 请求失败,输出错误信息
+            Debug.LogError("RefleshPlayers Error: " + request.error);
+        }
+    }
 
-        // StartCoroutine(RunLoop());
+    IEnumerator RefleshVotes(Action<String> RefreshSuccess)
+    {
+        using UnityWebRequest request = UnityWebRequest.Get(APIUrl.getVotes);
+        request.timeout = GameSetting.RequestTimeout;
+        yield return request.SendWebRequest();
+
+        if (request.result == UnityWebRequest.Result.Success)
+        {
+            RefreshSuccess.Invoke(request.downloadHandler.text);
+        }
+        else
+        {
+            // 请求失败,输出错误信息
+            Debug.LogError("RefleshVotes Error: " + request.error);
+        }
     }
 
     public GameObject SpawnPlayer (GameObject instance, PlayerProfile profile, Transform parent) {
         currentPlayerNum++;
         GameObject playerObject = GameObject.Instantiate (instance, parent.transform.position, UnityEngine.Quaternion.identity, parent);
         // enable player avatar sync avatar data
+        playerObject.name = profile.Name;
         var player = playerObject.GetComponent<PlayerCtrl> ();
 
         // 生成AC前缀，载入对应的AC
@@ -245,7 +271,9 @@ Adopt CoT+Relfextion+Few-Shots Method for PE
 
         if (request.result == UnityWebRequest.Result.Success)
         {
-            StartCoroutine(GetOnlinePlayers());
+            StartCoroutine(RefleshPlayers((string json) => {
+                StartCoroutine(GeneratePlayers(json));
+            }));
             yield return new WaitForSeconds(3);
             StartCoroutine(RunLoop());
         }
@@ -261,9 +289,85 @@ Adopt CoT+Relfextion+Few-Shots Method for PE
     IEnumerator FakeStartGame()
     {
         yield return new WaitForSeconds(3);
-        StartCoroutine(GetOnlinePlayers());
+        //StartCoroutine(GetOnlinePlayers());
         yield return new WaitForSeconds(3);
         StartCoroutine(RunLoop());
+    }
+
+    IEnumerator HandlePlayers()
+    {
+        yield return null;
+
+        StartCoroutine(RefleshVotes((string json) =>
+        {
+            Debug.Log($"RefleshVotes: {json}");
+            // parse response votes
+            PlayerVotes playerVotes = JsonUtility.FromJson<PlayerVotes>(json);
+            foreach (var player in dictPlayerObjects) {
+                player.Value.GetComponent<PlayerCtrl>().CleanVote();
+            }
+
+            var worldTime = WorldTime.GetComponent<WorldTime.WorldTime>();
+            if (worldTime.IsDay())
+            {
+                foreach (var vote in playerVotes.votes.player_votes)
+                {
+                    var targetPlayer = dictPlayerObjects[vote.id].GetComponent<PlayerCtrl>();
+                    targetPlayer.AddVote(vote.count, PlayerRole.Villager);
+                }
+            }
+            else
+            {
+                foreach (var vote in playerVotes.votes.wolf_votes)
+                {
+                    var targetPlayer = dictPlayerObjects[vote.id].GetComponent<PlayerCtrl>();
+                    targetPlayer.AddVote(vote.count, PlayerRole.Wolf);
+                }
+                foreach (var vote in playerVotes.votes.prophet_votes)
+                {
+                    var targetPlayer = dictPlayerObjects[vote.id].GetComponent<PlayerCtrl>();
+                    targetPlayer.AddVote(vote.count, PlayerRole.Prophet);
+                }
+
+                foreach (var vote in playerVotes.votes.witch_antidotes)
+                {
+                    var targetPlayer = dictPlayerObjects[vote.id].GetComponent<PlayerCtrl>();
+                    targetPlayer.AddVote(vote.count, PlayerRole.Witch);
+                }
+
+                foreach (var vote in playerVotes.votes.witch_poisions)
+                {
+                    var targetPlayer = dictPlayerObjects[vote.id].GetComponent<PlayerCtrl>();
+                    targetPlayer.AddVote(vote.count, PlayerRole.Witch);
+                }
+                
+            }
+            
+        }));
+        
+        StartCoroutine(RefleshPlayers((string json) => {
+            // Debug.Log($"RefleshPlayers: {json}");
+            // parse response players
+            PlayerProfile[] playerProfiles =
+                JsonConvert.DeserializeObject<PlayerProfile[]>(
+                json,
+                new PlayerProfileConverter()
+                );
+
+            foreach (var playerProfile in playerProfiles) {
+                // Debug.Log($"{playerProfile.Name}, {playerProfile.State},{playerProfile.Role},");
+                var targetPlayer = dictPlayerObjects[playerProfile.Id].GetComponent<PlayerCtrl>();
+                if (playerProfile.State == PlayerState.Dead || playerProfile.State == PlayerState.Dying)
+                {
+                    targetPlayer.State = PlayerState.Dead;
+                }
+                else
+                {
+                    targetPlayer.State = PlayerState.Idle;
+                }
+            }
+        }));
+        
     }
 
     /// <summary>
@@ -287,7 +391,7 @@ Adopt CoT+Relfextion+Few-Shots Method for PE
                     StartCoroutine (GetMsg ());
                 }
             }
-            
+
             float waitMilliseconds = GameSetting.GameLoopInterval;
             TimeSpan timeDifference = DateTime.Now - startTime;
             if (timeDifference.TotalMilliseconds < GameSetting.GameLoopInterval) {
@@ -296,9 +400,9 @@ Adopt CoT+Relfextion+Few-Shots Method for PE
             }
             yield return new WaitForSeconds(waitMilliseconds / 1000.0f);
 
-            Debug.Log($"Begin Game Loop: {IsRunning}, {isEnd}");
+            //Debug.Log($"Begin Game Loop: IsRunning: {IsRunning}, isEnd: {isEnd}");
             StartCoroutine(HandleMsg());
-            Debug.Log($"Begin Game Loop: {IsRunning}, {isEnd}");
+            //Debug.Log($"Begin Game Loop: IsRunning: {IsRunning}, isEnd: {isEnd}");
         }
 
         Debug.Log($"End Game Loop: {IsRunning}, {isEnd}");
@@ -334,36 +438,15 @@ Adopt CoT+Relfextion+Few-Shots Method for PE
             if (messages.Count > 0)
             {
                 Debug.Log($"Recv: {messages.Count} messages");
-                messages.Reverse();
+                // messages.Reverse();
                 foreach (var msg in messages)
                 {
                     AppendMessageToHistory(msg); // 添加到历史记录里
                     gameMessages.Enqueue(msg);
                 }
             }
-
-            // parse response players
-            PlayerProfile[] playerProfiles =
-                JsonConvert.DeserializeObject<PlayerProfile[]>(
-                jsonData["players"].ToString(),
-                new PlayerProfileConverter()
-                );
-
-            foreach (var playerProfile in playerProfiles) {
-                // Debug.Log($"{playerProfile.Name}, {playerProfile.State},{playerProfile.Role},");
-                var targetPlayer = dictPlayerObjects[playerProfile.Id].GetComponent<PlayerCtrl>();
-                if (playerProfile.State == PlayerState.Dead || playerProfile.State == PlayerState.Dying)
-                {
-                    targetPlayer.State = PlayerState.Dead;
-                }
-                else
-                {
-                    targetPlayer.State = PlayerState.Idle;
-                }
-            }
-
-
-            yield return null;
+            yield return new WaitForSeconds(0.5f);
+            StartCoroutine(HandlePlayers());
         } else {
             // 请求失败,输出错误信息
             Debug.LogError ("Error: " + request.error);
@@ -410,6 +493,7 @@ Adopt CoT+Relfextion+Few-Shots Method for PE
 
     IEnumerator HandleMsg () {
         while (GameMessages.Count != 0) {
+
             if (isMsgHandling) {
                 yield return new WaitForSeconds (1);
                 continue;
@@ -423,7 +507,7 @@ Adopt CoT+Relfextion+Few-Shots Method for PE
                 StartCoroutine (ShowRoundBoard ($"Round {msg.Round}"));
                 this.currentRound = msg.Round;
             }
-            yield return new WaitForSeconds(1);
+           
             switch (msg.Stage) {
             case GameStage.Assistant:
                 onGameConclusion (msg);
@@ -432,6 +516,8 @@ Adopt CoT+Relfextion+Few-Shots Method for PE
                 onPlayerMessage (msg);
                 break;
             }
+            yield return new WaitForSeconds(3);
+            
         }
     }
 
@@ -507,8 +593,6 @@ Adopt CoT+Relfextion+Few-Shots Method for PE
         roundText.text = $"Round {msg.Round}";
         playerName.text = msg.PlayerName + " (" + player.Profile.Role.ToString() +")";
         playerImg.sprite = GetPlayerImg (player.Profile);
-
-       
 
         StartCoroutine (TypeText (player, playerMessage, msg.Message.content, 0.01f));
         var worldTime = WorldTime.GetComponent<WorldTime.WorldTime> ();
@@ -596,7 +680,7 @@ Adopt CoT+Relfextion+Few-Shots Method for PE
     {
         PlayBtn.GetComponent<Image>().sprite = Resources.Load<Sprite>("images/Icon_DontLook");
         PlayBtn.enabled = flag;
-        Debug.Log(IsRunning);
+        //Debug.Log(IsRunning);
         if (!IsRunning)
         {
             StartCoroutine(StartGame());

@@ -10,7 +10,7 @@ public class GameSetting : Singleton<GameSetting>
     [SerializeField]
     static int playSpeed = 1;
     [SerializeField]
-    static float gameLoopInterval = 3000f;
+    static float gameLoopInterval = 5000f;
 	[SerializeField]
     static int requestTimeout = 1;
     [SerializeField]
@@ -52,7 +52,7 @@ public class GameSetting : Singleton<GameSetting>
             histroyFilePath = (string)settings["histroyFilePath"];
             APIUrl = (string)settings ["APIUrl"];
 
-            Debug.Log ("配置加载完成");
+            Debug.Log ("配置加载完成" + APIUrl);
         } else {
             Debug.LogError ("Config file not found: " + jsonPath);
         }

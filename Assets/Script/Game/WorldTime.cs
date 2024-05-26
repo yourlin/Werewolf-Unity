@@ -18,6 +18,8 @@ namespace WorldTime {
 
         private TimeSpan currentTime;
 
+        private bool isDay;
+
         private float minuteLength => dayLength / WorldTimeConstants.MinutesInDay;
 
         // Start is called before the first frame update
@@ -42,13 +44,19 @@ namespace WorldTime {
         }
 
         public void SetDayTime () {
+            isDay = true;
             currentTime = new TimeSpan (dayTime, 0, 0);
             WorldTimeChanged?.Invoke (this, currentTime);
         }
 
         public void SetNightTime () {
+            isDay = false;
             currentTime = new TimeSpan (nightTime, 0, 0);
             WorldTimeChanged?.Invoke (this, currentTime);
+        }
+
+        public bool IsDay() {
+            return isDay;
         }
     }
 }
