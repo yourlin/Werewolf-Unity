@@ -21,7 +21,7 @@ public class MessageContent {
 }
 
 public enum GameStage {
-    Unknown = 0,
+    Waiting = 0,
     NightWolf = 1,
     NightProphet = 2,
     NightWitch = 3,
@@ -88,7 +88,7 @@ public class PlayerMessageConverter : JsonConverter {
             IsDay = jsonObject ["is_day"] != null ? (bool)jsonObject ["is_day"] : false,
             CurrentTime = jsonObject ["current_time"]?.ToString (),
             Type = jsonObject ["type"] != null ? (PlayerMessageType)Enum.Parse (typeof (PlayerMessageType), (string)jsonObject ["type"], true) : PlayerMessageType.PlayerMessage,
-            Stage = jsonObject ["stage"] != null ? (GameStage)Enum.Parse (typeof (GameStage), (string)jsonObject ["stage"], true) : GameStage.Unknown
+            Stage = jsonObject ["stage"] != null ? (GameStage)Enum.Parse (typeof (GameStage), (string)jsonObject ["stage"], true) : GameStage.Waiting
         };
 
         if (jsonObject ["result"] != null) {

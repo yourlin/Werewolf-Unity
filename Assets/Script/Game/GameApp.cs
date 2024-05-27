@@ -40,7 +40,8 @@ public class GameApp : MonoBehaviour
     private int currentRound = 0;
     public GameObject Conclusion;
     public Button PlayBtn;
-    
+    public GameObject WaitingPanel;
+
 
     public bool IsRunning { get => isRunning; set => isRunning = value; }
     public Queue<PlayerMessage> GameMessages { get => gameMessages; set => gameMessages = value; }
@@ -522,6 +523,7 @@ Adopt CoT+Relfextion+Few-Shots Method for PE
     }
 
     private void onGameConclusion (PlayerMessage msg) {
+        WaitingPanel.SetActive (false);
         Conclusion.SetActive (true);
         ConclusionCtrl conclusionCtrl = Conclusion.GetComponent<ConclusionCtrl> ();
         conclusionCtrl.SetConclusion (msg.Message.content);
@@ -609,6 +611,7 @@ Adopt CoT+Relfextion+Few-Shots Method for PE
     }
 
     IEnumerator TypeText (PlayerCtrl playerCtrl, TMP_Text tMP_text, string str, float interval) {
+        WaitingPanel.SetActive (false);
         messagePanel.SetActive (true);
         playerCtrl.State = PlayerState.Busy;
         int i = 0;
@@ -628,6 +631,7 @@ Adopt CoT+Relfextion+Few-Shots Method for PE
         yield return isMsgHandling = false;
         yield return playerCtrl.State = PlayerState.Idle;
         messagePanel.SetActive (false);
+        WaitingPanel.SetActive (true);
     }
 
     bool IsRoundChanged (int round) {
