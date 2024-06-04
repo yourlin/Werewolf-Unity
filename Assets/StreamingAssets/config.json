@@ -3,6 +3,6 @@
     "playSpeed": 1,
     "gameLoopInterval": 3000.0,
     "requestTimeout": 1,
-    "histroyFilePath": "./history.txt",
+    "historyFilePath": "./history.txt",
     "APIUrl": "http://werewolf-demo-1305345708.us-east-1.elb.amazonaws.com/"
 }

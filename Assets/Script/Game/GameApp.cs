@@ -650,7 +650,7 @@ Adopt CoT+Relfextion+Few-Shots Method for PE
     }
 
     void AppendMessageToHistory (PlayerMessage msg) {
-        FileHelper.AppendTextToFile (GameSetting.HistroyFilePath, msg.ToString ());
+        FileHelper.AppendTextToFile (GameSetting.HistoryFilePath, msg.ToString ());
     }
 
     public Sprite GetPlayerImg (PlayerProfile profile) {

@@ -30,7 +30,7 @@ public class MainEventManager : MonoBehaviour
     }
 
     public async void onQuit () {
-        FileHelper.ClearFile (GameSetting.HistroyFilePath);
+        FileHelper.ClearFile (GameSetting.HistoryFilePath);
         await StopGame ();
         #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
@@ -48,7 +48,7 @@ public class MainEventManager : MonoBehaviour
     public async void onBackToMenu () {
 
         gameApp.IsRunning = false;
-        FileHelper.ClearFile (GameSetting.HistroyFilePath);
+        FileHelper.ClearFile (GameSetting.HistoryFilePath);
         await StopGame ();
         
         StartCoroutine (screenLoader.LoadScene (0));
@@ -84,7 +84,7 @@ public class MainEventManager : MonoBehaviour
             Destroy (child.gameObject);
         }
 
-        string [] lines= FileHelper.ReadFromFile (GameSetting.HistroyFilePath);
+        string [] lines= FileHelper.ReadFromFile (GameSetting.HistoryFilePath);
         Debug.Log ($"显示历史记录{lines.Length}条");
         //List<PlayerMessage> messageList = new List<PlayerMessage> ();
         

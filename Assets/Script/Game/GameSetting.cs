@@ -14,14 +14,14 @@ public class GameSetting : Singleton<GameSetting>
 	[SerializeField]
     static int requestTimeout = 1;
     [SerializeField]
-    static string histroyFilePath = "./history.txt";
+    static string historyFilePath = "./history.txt";
 
     public static int PlaySpeed { get => playSpeed; set => playSpeed = value; }
     public static int PlayerNum { get => playerNum; set => playerNum = value; }
 	public static float GameLoopInterval { get => gameLoopInterval; set => gameLoopInterval = value; }
 	public static int RequestTimeout { get => requestTimeout; set => requestTimeout = value; }
     public static float MessageEndWaitforSeconds { get; internal set; } = 5f;
-    public static string HistroyFilePath { get => histroyFilePath; set => histroyFilePath = value; }
+    public static string HistoryFilePath { get => historyFilePath; set => historyFilePath = value; }
     public static string APIUrl = "";
 
     static bool isInited = false;
@@ -49,7 +49,7 @@ public class GameSetting : Singleton<GameSetting>
             playSpeed = (int)settings["playSpeed"];
             gameLoopInterval = (float)settings["gameLoopInterval"];
             requestTimeout = (int)settings["requestTimeout"];
-            histroyFilePath = (string)settings["histroyFilePath"];
+            historyFilePath = (string)settings["historyFilePath"];
             APIUrl = (string)settings ["APIUrl"];
 
             Debug.Log ("配置加载完成" + APIUrl);
